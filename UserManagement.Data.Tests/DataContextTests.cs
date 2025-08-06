@@ -46,6 +46,7 @@ public class DataContextTests : IDisposable
             Surname = "User",
             Email = "test.user@example.com",
             IsActive = true,
+            DateOfBirth = new DateTime(1990, 2, 18)
         };
 
         // Act

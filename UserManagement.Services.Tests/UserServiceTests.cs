@@ -21,9 +21,9 @@ public class UserServiceTests
     {
         return new List<User>
         {
-            new User { Id = 1, Forename = "Johnny", Surname = "User", Email = "juser@example.com", IsActive = true },
-            new User { Id = 2, Forename = "John", Surname = "Doe", Email = "john.doe@example.com", IsActive = false },
-            new User { Id = 3, Forename = "Smith", Surname = "Johnson", Email = "smith.johnson@example.com", IsActive = true }
+            new User { Id = 1, Forename = "Johnny", Surname = "User", Email = "juser@example.com", IsActive = true, DateOfBirth = new DateTime(1990, 4, 21) },
+            new User { Id = 2, Forename = "John", Surname = "Doe", Email = "john.doe@example.com", IsActive = false, DateOfBirth = new DateTime(1988, 8, 11) },
+            new User { Id = 3, Forename = "Smith", Surname = "Johnson", Email = "smith.johnson@example.com", IsActive = true, DateOfBirth = new DateTime(1998, 7, 1) }
         };
     }
 

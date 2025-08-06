@@ -48,6 +48,7 @@ public class UserControllerTests : IDisposable
         viewResult.Model.Should().BeOfType<UserListViewModel>();
         var model = (UserListViewModel)viewResult.Model;
         model.Items.Should().HaveCount(11);
+        model.Items.Should().Contain(item => item.Forename == "Peter" && item.Surname == "Loew" && item.DateOfBirth == new DateTime(1988, 2, 11));
     }
 
     [Fact]
