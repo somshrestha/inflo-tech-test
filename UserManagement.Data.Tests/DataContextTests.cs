@@ -1,48 +1,90 @@
+using System;
 using System.Linq;
-using FluentAssertions;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using UserManagement.Models;
 
 namespace UserManagement.Data.Tests;
 
-public class DataContextTests
+public class DataContextTests : IDisposable
 {
-    [Fact]
-    public void GetAll_WhenNewEntityAdded_MustIncludeNewEntity()
-    {
-        // Arrange: Initializes objects and sets the value of the data that is passed to the method under test.
-        var context = CreateContext();
+    private readonly DataContext _dataContext;
 
-        var entity = new User
+    public DataContextTests()
+    {
+        var options = new DbContextOptionsBuilder<DataContext>()
+            .UseInMemoryDatabase(databaseName: "UserManagement.Data.DataContext")
+            .Options;
+        _dataContext = new DataContext(options);
+    }
+
+    public void Dispose()
+    {
+        _dataContext.Database.EnsureDeleted();
+        _dataContext.Dispose();
+    }
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsAllSeededUsers()
+    {
+        // Act
+        var result = await _dataContext.GetAllAsync<User>();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().HaveCount(11);
+    }
+
+    [Fact]
+    public async Task CreateAsync_AddsUserToDatabase()
+    {
+        // Arrange
+        var newUser = new User
         {
-            Forename = "Brand New",
+            Id = 12,
+            Forename = "Test",
             Surname = "User",
-            Email = "brandnewuser@example.com"
+            Email = "test.user@example.com",
+            IsActive = true,
         };
-        context.Create(entity);
 
-        // Act: Invokes the method under test with the arranged parameters.
-        var result = context.GetAll<User>();
+        // Act
+        await _dataContext.CreateAsync(newUser);
+        var result = await _dataContext.GetAllAsync<User>();
 
-        // Assert: Verifies that the action of the method under test behaves as expected.
-        result
-            .Should().Contain(s => s.Email == entity.Email)
-            .Which.Should().BeEquivalentTo(entity);
+        // Assert
+        result.Should().HaveCount(12);
     }
 
     [Fact]
-    public void GetAll_WhenDeleted_MustNotIncludeDeletedEntity()
+    public async Task UpdateAsync_UpdatesExistingUser()
     {
-        // Arrange: Initializes objects and sets the value of the data that is passed to the method under test.
-        var context = CreateContext();
-        var entity = context.GetAll<User>().First();
-        context.Delete(entity);
+        // Arrange
+        var existingUser = (await _dataContext.GetAllAsync<User>()).First(u => u.Id == 1);
+        existingUser.Forename = "Updated";
+        existingUser.Email = "updated.test@example.com";
 
-        // Act: Invokes the method under test with the arranged parameters.
-        var result = context.GetAll<User>();
+        // Act
+        await _dataContext.UpdateAsync(existingUser);
+        var result = (await _dataContext.GetAllAsync<User>()).First(u => u.Id == 1);
 
-        // Assert: Verifies that the action of the method under test behaves as expected.
-        result.Should().NotContain(s => s.Email == entity.Email);
+        // Assert
+        result.Forename.Should().Be("Updated");
+        result.Email.Should().Be("updated.test@example.com");
     }
 
-    private DataContext CreateContext() => new();
+    [Fact]
+    public async Task DeleteAsync_RemovesUserFromDatabase()
+    {
+        // Arrange
+        var userToDelete = (await _dataContext.GetAllAsync<User>()).First(u => u.Id == 1);
+
+        // Act
+        await _dataContext.DeleteAsync(userToDelete);
+        var result = await _dataContext.GetAllAsync<User>();
+
+        // Assert
+        result.Should().HaveCount(10);
+        result.Should().NotContain(u => u.Id == 1);
+    }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UserManagement.Data;
 using UserManagement.Models;
 using UserManagement.Services.Domain.Interfaces;
@@ -8,18 +9,22 @@ namespace UserManagement.Services.Domain.Implementations;
 
 public class UserService : IUserService
 {
-    private readonly IDataContext _dataAccess;
-    public UserService(IDataContext dataAccess) => _dataAccess = dataAccess;
+    private readonly IDataContext _dataContext;
+    public UserService(IDataContext dataContext) => _dataContext = dataContext;
 
     /// <summary>
     /// Return users by active state
     /// </summary>
     /// <param name="isActive"></param>
     /// <returns></returns>
-    public IEnumerable<User> FilterByActive(bool isActive)
+    public async Task<IEnumerable<User>> FilterByActive(bool? isActive)
     {
-        return _dataAccess.GetAll<User>().Where(u => u.IsActive == isActive).ToList();
+        var users = await _dataContext.GetAllAsync<User>();
+
+        return isActive.HasValue
+            ? users.Where(u => u.IsActive == isActive)
+            : users;
     }
 
-    public IEnumerable<User> GetAll() => _dataAccess.GetAll<User>();
+    public async Task<IEnumerable<User>> GetAllAsync() => await _dataContext.GetAllAsync<User>();
 }

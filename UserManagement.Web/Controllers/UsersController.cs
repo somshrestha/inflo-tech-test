@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Web.Models.Users;
 
@@ -11,23 +13,32 @@ public class UsersController : Controller
     public UsersController(IUserService userService) => _userService = userService;
 
     [HttpGet]
-    public ViewResult List([FromQuery(Name = "isActive")] bool? isActive)
+    public async Task<IActionResult> List([FromQuery(Name = "isActive")] bool? isActive)
     {
-        var items = (isActive.HasValue ? _userService.FilterByActive(isActive.Value) : _userService.GetAll())
-            .Select(p => new UserListItemViewModel
+        try
         {
-            Id = p.Id,
-            Forename = p.Forename,
-            Surname = p.Surname,
-            Email = p.Email,
-            IsActive = p.IsActive
-        });
+            var users = await _userService.FilterByActive(isActive);
 
-        var model = new UserListViewModel
+            var items = users.Select(p => new UserListItemViewModel
+            {
+                Id = p.Id,
+                Forename = p.Forename,
+                Surname = p.Surname,
+                Email = p.Email,
+                IsActive = p.IsActive
+            });
+
+            var model = new UserListViewModel
+            {
+                Items = items.ToList()
+            };
+
+            return View(model);
+
+        }
+        catch (Exception)
         {
-            Items = items.ToList()
-        };
-
-        return View(model);
+            return StatusCode(500, "An error occurred while retrieving the user list.");
+        }
     }
 }

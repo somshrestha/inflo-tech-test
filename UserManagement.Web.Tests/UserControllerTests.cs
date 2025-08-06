@@ -1,48 +1,101 @@
-using UserManagement.Models;
+using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using UserManagement.Services.Domain.Implementations;
 using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Web.Models.Users;
 using UserManagement.WebMS.Controllers;
 
 namespace UserManagement.Data.Tests;
 
-public class UserControllerTests
+public class UserControllerTests : IDisposable
 {
+    private readonly DataContext _dataContext;
+    private readonly UsersController _controller;
+
+    public UserControllerTests()
+    {
+        var services = new ServiceCollection();
+        services.AddDbContext<DataContext>(options =>
+            options.UseInMemoryDatabase("UserManagement.Data.DataContext"));
+
+        var serviceProvider = services.BuildServiceProvider();
+        _dataContext = serviceProvider.GetRequiredService<DataContext>();
+
+        _dataContext.Database.EnsureCreated();
+
+        var userService = new UserService(_dataContext);
+        _controller = new UsersController(userService);
+    }
+
+    public void Dispose()
+    {
+        _dataContext.Database.EnsureDeleted();
+        _dataContext.Dispose();
+    }
+
     [Fact]
-    public void List_WhenServiceReturnsUsers_ModelMustContainUsers()
+    public async Task List_NoFilter_ReturnsAllUsers()
     {
-        // Arrange: Initializes objects and sets the value of the data that is passed to the method under test.
-        var controller = CreateController();
-        var users = SetupUsers();
+        // Act
+        var result = await _controller.List(null);
 
-        // Act: Invokes the method under test with the arranged parameters.
-        var result = controller.List(null);
-
-        // Assert: Verifies that the action of the method under test behaves as expected.
-        result.Model
-            .Should().BeOfType<UserListViewModel>()
-            .Which.Items.Should().BeEquivalentTo(users);
+        // Assert
+        result.Should().BeOfType<ViewResult>();
+        var viewResult = (ViewResult)result;
+        viewResult.Model.Should().BeOfType<UserListViewModel>();
+        var model = (UserListViewModel)viewResult.Model;
+        model.Items.Should().HaveCount(11);
     }
 
-    private User[] SetupUsers(string forename = "Johnny", string surname = "User", string email = "juser@example.com", bool isActive = true)
+    [Fact]
+    public async Task List_ActiveFilterTrue_ReturnsOnlyActiveUsers()
     {
-        var users = new[]
-        {
-            new User
-            {
-                Forename = forename,
-                Surname = surname,
-                Email = email,
-                IsActive = isActive
-            }
-        };
+        // Act
+        var result = await _controller.List(true);
 
-        _userService
-            .Setup(s => s.GetAll())
-            .Returns(users);
-
-        return users;
+        // Assert
+        result.Should().BeOfType<ViewResult>();
+        var viewResult = (ViewResult)result;
+        viewResult.Model.Should().BeOfType<UserListViewModel>();
+        var model = (UserListViewModel)viewResult.Model;
+        model.Items.Should().HaveCount(7);
+        model.Items.Should().OnlyContain(item => item.IsActive);
     }
 
-    private readonly Mock<IUserService> _userService = new();
-    private UsersController CreateController() => new(_userService.Object);
+    [Fact]
+    public async Task List_ActiveFilterFalse_ReturnsOnlyInactiveUsers()
+    {
+        // Act
+        var result = await _controller.List(false);
+
+        // Assert
+        result.Should().BeOfType<ViewResult>();
+        var viewResult = (ViewResult)result;
+        viewResult.Model.Should().BeOfType<UserListViewModel>();
+        var model = (UserListViewModel)viewResult.Model;
+        model.Items.Should().HaveCount(4);
+        model.Items.Should().OnlyContain(item => !item.IsActive);
+    }
+
+    [Fact]
+    public async Task List_DatabaseError_ReturnsStatusCode500()
+    {
+        // Arrange
+        var userServiceMock = new Mock<IUserService>();
+        userServiceMock.Setup(s => s.FilterByActive(It.IsAny<bool?>()))
+            .ThrowsAsync(new Exception("Simulated database error"));
+        var errorController = new UsersController(userServiceMock.Object);
+
+        // Act
+        var result = await errorController.List(null);
+
+        // Assert
+        result.Should().BeOfType<ObjectResult>();
+        var statusCodeResult = (ObjectResult)result;
+        statusCodeResult.StatusCode.Should().Be(500);
+        statusCodeResult.Value.Should().Be("An error occurred while retrieving the user list.");
+    }
 }
