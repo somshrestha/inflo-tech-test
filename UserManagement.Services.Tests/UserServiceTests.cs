@@ -123,4 +123,38 @@ public class UserServiceTests
             .Should().ThrowAsync<Exception>().WithMessage(exceptionMessage);
         _dataContextMock.Verify(dc => dc.GetAllAsync<User>(), Times.Once);
     }
+
+    [Fact]
+    public async Task CreateAsync_ValidUser_CallsAddAndSaveChanges()
+    {
+        // Arrange
+        var user = new User
+        {
+            Forename = "Test",
+            Surname = "User",
+            Email = "test.user@example.com",
+            IsActive = true,
+            DateOfBirth = new DateTime(1990, 1, 1)
+        };
+        _dataContextMock.Setup(dc => dc.CreateAsync(It.IsAny<User>())).Verifiable();
+
+        // Act
+        await _userService.CreateAsync(user);
+
+        // Assert
+        _dataContextMock.Verify(dc => dc.CreateAsync(user), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenDataContextThrowsException_PropagatesException()
+    {
+        // Arrange
+        var user = new User { Forename = "Test", Surname = "User" };
+        _dataContextMock.Setup(dc => dc.CreateAsync(It.IsAny<User>())).ThrowsAsync(new Exception("Database error"));
+
+        // Act & Assert
+        await FluentActions.Invoking(() => _userService.CreateAsync(user))
+            .Should().ThrowAsync<Exception>().WithMessage("Database error");
+        _dataContextMock.Verify(dc => dc.CreateAsync(user), Times.Once);
+    }
 }

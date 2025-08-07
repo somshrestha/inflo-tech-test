@@ -13,4 +13,6 @@ public interface IUserService
     /// <returns></returns>
     Task<IEnumerable<User>> FilterByActive(bool? isActive);
     Task<IEnumerable<User>> GetAllAsync();
+
+    Task CreateAsync(User user);
 }

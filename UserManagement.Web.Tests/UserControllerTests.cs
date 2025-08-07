@@ -99,4 +99,69 @@ public class UserControllerTests : IDisposable
         statusCodeResult.StatusCode.Should().Be(500);
         statusCodeResult.Value.Should().Be("An error occurred while retrieving the user list.");
     }
+
+    [Fact]
+    public void Add_Get_ReturnsViewWithEmptyModel()
+    {
+        // Act
+        var result = _controller.Add();
+
+        // Assert
+        result.Should().BeOfType<ViewResult>();
+        var viewResult = (ViewResult)result;
+        viewResult.Model.Should().BeOfType<UserViewModel>();
+        var model = (UserViewModel)viewResult.Model;
+        model.Forename.Should().BeEmpty();
+        model.Forename.Should().BeEmpty();
+        model.Forename.Should().BeEmpty();
+        model.DateOfBirth.Should().BeNull();
+        model.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Add_Post_ValidModel_CreatesUserAndRedirects()
+    {
+        // Arrange
+        var model = new UserViewModel
+        {
+            Forename = "Test",
+            Surname = "User",
+            Email = "testuser@example.com",
+            DateOfBirth = new DateTime(2000, 7, 15),
+            IsActive = true
+        };
+
+        // Act
+        var result = await _controller.Add(model);
+
+        // Assert
+        result.Should().BeOfType<RedirectToActionResult>();
+        var redirectResult = (RedirectToActionResult)result;
+        redirectResult.ActionName.Should().Be("List");
+    }
+
+    [Fact]
+    public async Task Add_Post_InvalidModel_ReturnsViewWithErrors()
+    {
+        // Arrange
+        var model = new UserViewModel
+        {
+            Forename = "",
+            Surname = "User",
+            Email = "invalidemail",
+            DateOfBirth = new DateTime(2000, 7, 15),
+            IsActive = true
+        };
+        _controller.ModelState.AddModelError("Forename", "Forename is required.");
+        _controller.ModelState.AddModelError("Email", "Invalid email format.");
+
+        // Act
+        var result = await _controller.Add(model);
+
+        // Assert
+        result.Should().BeOfType<ViewResult>();
+        var viewResult = (ViewResult)result;
+        viewResult.Model.Should().Be(model);
+        viewResult.ViewData.ModelState.IsValid.Should().BeFalse();
+    }
 }

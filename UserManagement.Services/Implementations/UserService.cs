@@ -27,4 +27,9 @@ public class UserService : IUserService
     }
 
     public async Task<IEnumerable<User>> GetAllAsync() => await _dataContext.GetAllAsync<User>();
+
+    public async Task CreateAsync(User user)
+    {
+        await _dataContext.CreateAsync(user);
+    }
 }
