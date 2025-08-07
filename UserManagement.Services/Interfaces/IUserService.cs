@@ -12,7 +12,24 @@ public interface IUserService
     /// <param name="isActive"></param>
     /// <returns></returns>
     Task<IEnumerable<User>> FilterByActive(bool? isActive);
+
+    /// <summary>
+    /// Return all users
+    /// </summary>
+    /// <returns></returns>
     Task<IEnumerable<User>> GetAllAsync();
 
+    /// <summary>
+    /// Add an user
+    /// </summary>
+    /// <param name="user"></param>
+    /// <returns></returns>
     Task CreateAsync(User user);
+
+    /// <summary>
+    /// Gets an user by id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    Task<User?> GetByIdAsync(long id);
 }

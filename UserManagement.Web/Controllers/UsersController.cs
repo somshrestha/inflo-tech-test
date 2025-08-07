@@ -85,4 +85,33 @@ public class UsersController : Controller
             return StatusCode(500, "An error occurred while creating the user.");
         }
     }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> View(long id)
+    {
+        try
+        {
+            var user = await _userService.GetByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var model = new UserViewModel
+            {
+                Id = user.Id,
+                Forename = user.Forename,
+                Surname = user.Surname,
+                Email = user.Email,
+                IsActive = user.IsActive,
+                DateOfBirth = user.DateOfBirth
+            };
+
+            return View(model);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "An error occurred while creating the user.");
+        }
+    }
 }

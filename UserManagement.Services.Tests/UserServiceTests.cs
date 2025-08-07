@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UserManagement.Models;
 using UserManagement.Services.Domain.Implementations;
@@ -156,5 +157,36 @@ public class UserServiceTests
         await FluentActions.Invoking(() => _userService.CreateAsync(user))
             .Should().ThrowAsync<Exception>().WithMessage("Database error");
         _dataContextMock.Verify(dc => dc.CreateAsync(user), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ExistingUser_ReturnsUser()
+    {
+        // Arrange
+        var users = GetSampleUsers();
+        var expectedUser = users.First(u => u.Id == 1);
+        _dataContextMock.Setup(dc => dc.GetByIdAsync<User>(1L)).ReturnsAsync(expectedUser);
+
+        // Act
+        var result = await _userService.GetByIdAsync(1);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expectedUser);
+        _dataContextMock.Verify(dc => dc.GetByIdAsync<User>(1L), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_NonExistentUser_ReturnsNull()
+    {
+        // Arrange
+        _dataContextMock.Setup(dc => dc.GetByIdAsync<User>(999L)).ReturnsAsync((User?)null);
+
+        // Act
+        var result = await _userService.GetByIdAsync(999);
+
+        // Assert
+        result.Should().BeNull();
+        _dataContextMock.Verify(dc => dc.GetByIdAsync<User>(999L), Times.Once);
     }
 }

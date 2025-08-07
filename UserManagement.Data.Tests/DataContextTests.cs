@@ -88,4 +88,23 @@ public class DataContextTests : IDisposable
         result.Should().HaveCount(10);
         result.Should().NotContain(u => u.Id == 1);
     }
+
+    [Fact]
+    public async Task GetByIdAsync_GetsUserFromDatabase()
+    {
+        // Act
+        var result = await _dataContext.GetByIdAsync<User>(1);
+
+        // Assert
+        result.Should().NotBeNull();
+    }
+    [Fact]
+    public async Task GetByIdAsync_NonExistentUser_ReturnsNull()
+    {
+        // Act
+        var result = await _dataContext.GetByIdAsync<User>(999);
+
+        // Assert
+        result.Should().BeNull();
+    }
 }

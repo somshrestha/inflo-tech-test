@@ -16,34 +16,34 @@
             </tr>  
         </thead>  
         <tbody>  
-            @foreach (var item in Model.Items)  
+            @foreach (var user in Model.Items)  
             {  
                 <tr>  
                     <td>  
-                        @item.Id  
+                        @user.Id  
                     </td>  
-                    <td>  
-                        @item.Forename  
+                    <td>
+                        @user.Forename
                     </td>  
-                    <td>  
-                        @item.Surname  
+                    <td>
+                        @user.Surname
                     </td>  
-                    <td>  
-                        @item.Email  
+                    <td>
+                        @user.Email
                     </td>  
-                    <td>  
-                        @(item.IsActive ? "Yes" : "No")
+                    <td>
+                        @(user.IsActive ? "Yes" : "No")
                     </td>
                     <td>
-                        @item.DateOfBirth?.ToString("yyyy-MM-dd")
+                        @user.DateOfBirth?.ToString("yyyy-MM-dd")
                     </td>
                     <td>  
                         <div class="dropdown">  
                             <button type="button" class="btn btn-default dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="btnToggleActions">  
                                 Actions  
                             </button>  
-                            <ul class="dropdown-menu" aria-labelledby="btnToggleActions">  
-                                <li><a class="dropdown-item" href="#">View</a></li>  
+                            <ul class="dropdown-menu" aria-labelledby="btnToggleActions">
+                                <li><a class="dropdown-item" asp-action="View" asp-route-id="@user.Id">View</a></li>
                                 <li><a class="dropdown-item" href="#">Edit</a></li>  
                                 <li><a class="dropdown-item" href="#">Delete</a></li>  
                             </ul>  

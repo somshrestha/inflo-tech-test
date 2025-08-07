@@ -12,11 +12,6 @@ public class UserService : IUserService
     private readonly IDataContext _dataContext;
     public UserService(IDataContext dataContext) => _dataContext = dataContext;
 
-    /// <summary>
-    /// Return users by active state
-    /// </summary>
-    /// <param name="isActive"></param>
-    /// <returns></returns>
     public async Task<IEnumerable<User>> FilterByActive(bool? isActive)
     {
         var users = await _dataContext.GetAllAsync<User>();
@@ -31,5 +26,10 @@ public class UserService : IUserService
     public async Task CreateAsync(User user)
     {
         await _dataContext.CreateAsync(user);
+    }
+
+    public async Task<User?> GetByIdAsync(long id)
+    {
+        return await _dataContext.GetByIdAsync<User>(id);
     }
 }

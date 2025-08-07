@@ -31,6 +31,9 @@ public class DataContext : DbContext, IDataContext
     public async Task<IEnumerable<TEntity>> GetAllAsync<TEntity>() where TEntity : class
         => await base.Set<TEntity>().ToListAsync();
 
+    public async Task<TEntity?> GetByIdAsync<TEntity>(long id) where TEntity : class
+       => await base.Set<TEntity>().FindAsync(id);
+
     public async Task CreateAsync<TEntity>(TEntity entity) where TEntity : class
     {
         await base.AddAsync(entity);
