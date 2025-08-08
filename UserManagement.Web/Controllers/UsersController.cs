@@ -114,4 +114,78 @@ public class UsersController : Controller
             return StatusCode(500, "An error occurred while creating the user.");
         }
     }
+
+    [HttpGet("edit/{id}")]
+    public async Task<IActionResult> Edit(long id)
+    {
+        try
+        {
+            var user = await _userService.GetByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var model = new UserViewModel
+            {
+                Id = user.Id,
+                Forename = user.Forename,
+                Surname = user.Surname,
+                Email = user.Email,
+                IsActive = user.IsActive,
+                DateOfBirth = user.DateOfBirth
+            };
+
+            return View(model);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "An error occurred while creating the user.");
+        }
+    }
+
+    [HttpPost("edit/{id}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(long id, UserViewModel model)
+    {
+        if (id != model.Id)
+        {
+            return BadRequest();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        try
+        {
+            if (model.DateOfBirth.HasValue && model.DateOfBirth > DateTime.Today)
+            {
+                ModelState.AddModelError("DateOfBirth", "Date of Birth cannot be in the future.");
+                return View(model);
+            }
+
+            var user = await _userService.GetByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            user.Forename = model.Forename;
+            user.Surname = model.Surname;
+            user.Email = model.Email;
+            user.IsActive = model.IsActive;
+            user.DateOfBirth = model.DateOfBirth;
+
+            await _userService.UpdateAsync(user);
+            return RedirectToAction(nameof(List));
+        }
+        catch (Exception)
+        {
+            ModelState.AddModelError("", "An error occurred while updating the user. Please try again.");
+            return View(model);
+        }
+    }
+
 }

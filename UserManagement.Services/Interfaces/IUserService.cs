@@ -32,4 +32,11 @@ public interface IUserService
     /// <param name="id"></param>
     /// <returns></returns>
     Task<User?> GetByIdAsync(long id);
+
+    /// <summary>
+    /// Update an user
+    /// </summary>
+    /// <param name="user"></param>
+    /// <returns></returns>
+    Task UpdateAsync(User user);
 }

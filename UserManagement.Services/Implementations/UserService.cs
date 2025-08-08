@@ -32,4 +32,9 @@ public class UserService : IUserService
     {
         return await _dataContext.GetByIdAsync<User>(id);
     }
+
+    public async Task UpdateAsync(User user)
+    {
+        await _dataContext.UpdateAsync(user);
+    }
 }

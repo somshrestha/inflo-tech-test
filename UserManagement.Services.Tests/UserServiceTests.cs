@@ -189,4 +189,26 @@ public class UserServiceTests
         result.Should().BeNull();
         _dataContextMock.Verify(dc => dc.GetByIdAsync<User>(999L), Times.Once);
     }
+
+    [Fact]
+    public async Task UpdateAsync_ValidUser_CallsDataContextUpdateAsync()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Forename = "Updated",
+            Surname = "User",
+            Email = "updated@example.com",
+            IsActive = false,
+            DateOfBirth = new DateTime(1990, 4, 21)
+        };
+        _dataContextMock.Setup(dc => dc.UpdateAsync(It.IsAny<User>())).Returns(Task.CompletedTask).Verifiable();
+
+        // Act
+        await _userService.UpdateAsync(user);
+
+        // Assert
+        _dataContextMock.Verify(dc => dc.UpdateAsync(user), Times.Once());
+    }
 }

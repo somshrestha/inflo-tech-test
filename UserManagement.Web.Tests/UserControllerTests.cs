@@ -198,4 +198,134 @@ public class UserControllerTests : IDisposable
         // Assert
         result.Should().BeOfType<NotFoundResult>();
     }
+
+    [Fact]
+    public async Task EditGet_ValidId_ReturnsViewResultWithUserViewModel()
+    {
+        // Arrange
+        long id = 1;
+
+        // Act
+        var result = await _controller.Edit(id);
+
+        // Assert
+        var viewResult = result.Should().BeOfType<ViewResult>().Subject;
+        viewResult.Model.Should().BeOfType<UserViewModel>();
+        var model = (UserViewModel)viewResult.Model;
+        model.Id.Should().Be(1);
+        model.Forename.Should().Be("Peter");
+        model.Surname.Should().Be("Loew");
+        model.Email.Should().Be("ploew@example.com");
+        model.IsActive.Should().BeTrue();
+        model.DateOfBirth.Should().Be(new DateTime(1988, 2, 11));
+    }
+
+    [Fact]
+    public async Task EditGet_NonExistentId_ReturnsNotFound()
+    {
+        // Arrange
+        long id = 999;
+
+        // Act
+        var result = await _controller.Edit(id);
+
+        // Assert
+        result.Should().BeOfType<NotFoundResult>();
+    }
+
+    [Fact]
+    public async Task EditPost_ValidModel_UpdatesUserAndRedirects()
+    {
+        // Arrange
+        var model = new UserViewModel
+        {
+            Id = 1,
+            Forename = "Updated",
+            Surname = "Loew",
+            Email = "updated@example.com",
+            IsActive = false,
+            DateOfBirth = new DateTime(1988, 2, 11)
+        };
+
+        // Act
+        var result = await _controller.Edit(1, model);
+
+        // Assert
+        var redirectResult = result.Should().BeOfType<RedirectToActionResult>().Subject;
+        redirectResult.ActionName.Should().Be("List");
+        var updatedUser = await _dataContext.Users!.FindAsync(1L);
+        updatedUser!.Forename.Should().Be("Updated");
+        updatedUser.Surname.Should().Be("Loew");
+        updatedUser.Email.Should().Be("updated@example.com");
+        updatedUser.IsActive.Should().BeFalse();
+        updatedUser.DateOfBirth.Should().Be(new DateTime(1988, 2, 11));
+    }
+
+    [Fact]
+    public async Task EditPost_InvalidModel_ReturnsViewWithModel()
+    {
+        // Arrange
+        var model = new UserViewModel
+        {
+            Id = 1,
+            Forename = "",
+            Surname = "Loew",
+            Email = "invalid",
+            IsActive = true,
+            DateOfBirth = DateTime.MinValue
+        };
+        _controller.ModelState.AddModelError("Forename", "Forename is required");
+        _controller.ModelState.AddModelError("Email", "Invalid email address");
+
+        // Act
+        var result = await _controller.Edit(1, model);
+
+        // Assert
+        var viewResult = result.Should().BeOfType<ViewResult>().Subject;
+        viewResult.Model.Should().BeEquivalentTo(model);
+        _controller.ModelState.ContainsKey("Forename").Should().BeTrue();
+        _controller.ModelState.ContainsKey("Email").Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task EditPost_NonExistentId_ReturnsNotFound()
+    {
+        // Arrange
+        var model = new UserViewModel
+        {
+            Id = 999,
+            Forename = "Test",
+            Surname = "User",
+            Email = "test@example.com",
+            IsActive = true,
+            DateOfBirth = new DateTime(1990, 1, 1)
+        };
+
+        // Act
+        var result = await _controller.Edit(999, model);
+
+        // Assert
+        result.Should().BeOfType<NotFoundResult>();
+    }
+
+    [Fact]
+    public async Task EditPost_MismatchedId_ReturnsNotFound()
+    {
+        // Arrange
+        var model = new UserViewModel
+        {
+            Id = 2,
+            Forename = "Test",
+            Surname = "User",
+            Email = "test@example.com",
+            IsActive = true,
+            DateOfBirth = new DateTime(1990, 1, 1)
+        };
+
+        // Act
+        var result = await _controller.Edit(1, model);
+
+        // Assert
+        result.Should().BeOfType<BadRequestResult>();
+    }
 }
