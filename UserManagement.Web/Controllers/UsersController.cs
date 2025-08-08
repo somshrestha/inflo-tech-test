@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using UserManagement.Models;
 using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Web.Models.Users;
+using UserManagement.Web.UserHelpers;
 
 namespace UserManagement.WebMS.Controllers;
 
@@ -11,7 +13,14 @@ namespace UserManagement.WebMS.Controllers;
 public class UsersController : Controller
 {
     private readonly IUserService _userService;
-    public UsersController(IUserService userService) => _userService = userService;
+    private readonly IMapper _mapper;
+    private readonly IUserValidator _userValidator;
+    public UsersController(IUserService userService, IMapper mapper, IUserValidator userValidator)
+    {
+        _userService = userService;
+        _mapper = mapper;
+        _userValidator = userValidator;
+    }
 
     [HttpGet]
     public async Task<IActionResult> List([FromQuery(Name = "isActive")] bool? isActive)
@@ -19,20 +28,9 @@ public class UsersController : Controller
         try
         {
             var users = await _userService.FilterByActive(isActive);
-
-            var items = users.Select(p => new UserListItemViewModel
-            {
-                Id = p.Id,
-                Forename = p.Forename,
-                Surname = p.Surname,
-                Email = p.Email,
-                IsActive = p.IsActive,
-                DateOfBirth = p.DateOfBirth
-            });
-
             var model = new UserListViewModel
             {
-                Items = items.ToList()
+                Items = users.Select(_mapper.Map<UserListItemViewModel>).ToList()
             };
 
             return View(model);
@@ -55,29 +53,19 @@ public class UsersController : Controller
     public async Task<IActionResult> Add(UserViewModel model)
     {
         if (!ModelState.IsValid)
-        {
             return View(model);
-        }
 
         try
         {
-            if (model.DateOfBirth.HasValue && model.DateOfBirth > DateTime.Today)
+            if (!_userValidator.IsValidDateOfBirth(model.DateOfBirth))
             {
                 ModelState.AddModelError("DateOfBirth", "Date of Birth cannot be in the future.");
                 return View(model);
             }
 
-            var user = new User
-            {
-                Id = model.Id,
-                Forename = model.Forename,
-                Surname = model.Surname,
-                Email = model.Email,
-                IsActive = model.IsActive,
-                DateOfBirth = model.DateOfBirth
-            };
-
+            var user = _mapper.Map<User>(model);
             await _userService.CreateAsync(user);
+
             return RedirectToAction(nameof(List));
         }
         catch (Exception)
@@ -93,19 +81,9 @@ public class UsersController : Controller
         {
             var user = await _userService.GetByIdAsync(id);
             if (user == null)
-            {
                 return NotFound();
-            }
 
-            var model = new UserViewModel
-            {
-                Id = user.Id,
-                Forename = user.Forename,
-                Surname = user.Surname,
-                Email = user.Email,
-                IsActive = user.IsActive,
-                DateOfBirth = user.DateOfBirth
-            };
+            var model = _mapper.Map<UserViewModel>(user);
 
             return View(model);
         }
@@ -122,19 +100,9 @@ public class UsersController : Controller
         {
             var user = await _userService.GetByIdAsync(id);
             if (user == null)
-            {
                 return NotFound();
-            }
 
-            var model = new UserViewModel
-            {
-                Id = user.Id,
-                Forename = user.Forename,
-                Surname = user.Surname,
-                Email = user.Email,
-                IsActive = user.IsActive,
-                DateOfBirth = user.DateOfBirth
-            };
+            var model = _mapper.Map<UserViewModel>(user);
 
             return View(model);
         }
@@ -149,18 +117,14 @@ public class UsersController : Controller
     public async Task<IActionResult> Edit(long id, UserViewModel model)
     {
         if (id != model.Id)
-        {
             return BadRequest();
-        }
 
         if (!ModelState.IsValid)
-        {
             return View(model);
-        }
 
         try
         {
-            if (model.DateOfBirth.HasValue && model.DateOfBirth > DateTime.Today)
+            if (!_userValidator.IsValidDateOfBirth(model.DateOfBirth))
             {
                 ModelState.AddModelError("DateOfBirth", "Date of Birth cannot be in the future.");
                 return View(model);
@@ -168,17 +132,11 @@ public class UsersController : Controller
 
             var user = await _userService.GetByIdAsync(id);
             if (user == null)
-            {
                 return NotFound();
-            }
 
-            user.Forename = model.Forename;
-            user.Surname = model.Surname;
-            user.Email = model.Email;
-            user.IsActive = model.IsActive;
-            user.DateOfBirth = model.DateOfBirth;
-
+            _mapper.Map(model, user);
             await _userService.UpdateAsync(user);
+
             return RedirectToAction(nameof(List));
         }
         catch (Exception)
@@ -195,19 +153,9 @@ public class UsersController : Controller
         {
             var user = await _userService.GetByIdAsync(id);
             if (user == null)
-            {
                 return NotFound();
-            }
 
-            var model = new UserViewModel
-            {
-                Id = user.Id,
-                Forename = user.Forename,
-                Surname = user.Surname,
-                Email = user.Email,
-                IsActive = user.IsActive,
-                DateOfBirth = user.DateOfBirth
-            };
+            var model = _mapper.Map<UserViewModel>(user);
 
             return View(model);
         }
@@ -225,9 +173,7 @@ public class UsersController : Controller
         {
             var user = await _userService.GetByIdAsync(id);
             if (user == null)
-            {
                 return NotFound();
-            }
 
             await _userService.DeleteAsync(user);
             return RedirectToAction(nameof(List));

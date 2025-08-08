@@ -1,11 +1,16 @@
 using System;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using UserManagement.Models;
 using UserManagement.Services.Domain.Implementations;
 using UserManagement.Services.Domain.Interfaces;
+using UserManagement.Web.Mapper;
 using UserManagement.Web.Models.Users;
+using UserManagement.Web.UserHelpers;
 using UserManagement.WebMS.Controllers;
 
 namespace UserManagement.Data.Tests;
@@ -14,12 +19,19 @@ public class UserControllerTests : IDisposable
 {
     private readonly DataContext _dataContext;
     private readonly UsersController _controller;
+    private bool _isDatabaseSeeded;
 
     public UserControllerTests()
     {
         var services = new ServiceCollection();
+
+        services.AddLogging(builder => builder.AddConsole());
         services.AddDbContext<DataContext>(options =>
             options.UseInMemoryDatabase("UserManagement.Data.DataContext"));
+
+        services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
+
+        services.AddScoped<IUserValidator, UserValidator>();
 
         var serviceProvider = services.BuildServiceProvider();
         _dataContext = serviceProvider.GetRequiredService<DataContext>();
@@ -27,7 +39,9 @@ public class UserControllerTests : IDisposable
         _dataContext.Database.EnsureCreated();
 
         var userService = new UserService(_dataContext);
-        _controller = new UsersController(userService);
+        var mapper = serviceProvider.GetRequiredService<IMapper>();
+        var userValidator = serviceProvider.GetRequiredService<IUserValidator>();
+        _controller = new UsersController(userService, mapper, userValidator);
     }
 
     public void Dispose()
@@ -88,7 +102,7 @@ public class UserControllerTests : IDisposable
         var userServiceMock = new Mock<IUserService>();
         userServiceMock.Setup(s => s.FilterByActive(It.IsAny<bool?>()))
             .ThrowsAsync(new Exception("Simulated database error"));
-        var errorController = new UsersController(userServiceMock.Object);
+        var errorController = new UsersController(userServiceMock.Object, Mock.Of<IMapper>(), Mock.Of<IUserValidator>());
 
         // Act
         var result = await errorController.List(null);
@@ -111,8 +125,6 @@ public class UserControllerTests : IDisposable
         var viewResult = (ViewResult)result;
         viewResult.Model.Should().BeOfType<UserViewModel>();
         var model = (UserViewModel)viewResult.Model;
-        model.Forename.Should().BeEmpty();
-        model.Forename.Should().BeEmpty();
         model.Forename.Should().BeEmpty();
         model.DateOfBirth.Should().BeNull();
         model.IsActive.Should().BeFalse();

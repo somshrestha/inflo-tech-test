@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using UserManagement.Data;
+using UserManagement.Web.Extensions;
+using UserManagement.Web.Mapper;
 using Westwind.AspNetCore.Markdown;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,11 +12,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddDataAccess()
     .AddDomainServices()
+    .AddHelperServices()
     .AddMarkdown()
     .AddControllersWithViews();
 
 builder.Services.AddDbContext<DataContext>(options =>
     options.UseInMemoryDatabase("UserManagement.Data.DataContext"));
+builder.Services.AddAutoMapper(config =>
+    config.AddProfile<MappingProfile>(), typeof(Program));
 
 var app = builder.Build();
 
