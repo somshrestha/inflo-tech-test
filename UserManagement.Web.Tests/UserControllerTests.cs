@@ -328,4 +328,67 @@ public class UserControllerTests : IDisposable
         // Assert
         result.Should().BeOfType<BadRequestResult>();
     }
+
+    [Fact]
+    public async Task DeleteGet_ValidId_ReturnsViewResultWithUserViewModel()
+    {
+        // Arrange
+        long id = 1;
+
+        // Act
+        var result = await _controller.Delete(id);
+
+        // Assert
+        var viewResult = result.Should().BeOfType<ViewResult>().Subject;
+        viewResult.Model.Should().BeOfType<UserViewModel>();
+        var model = (UserViewModel)viewResult.Model;
+        model.Id.Should().Be(1);
+        model.Forename.Should().Be("Peter");
+        model.Surname.Should().Be("Loew");
+        model.Email.Should().Be("ploew@example.com");
+        model.IsActive.Should().BeTrue();
+        model.DateOfBirth.Should().Be(new DateTime(1988, 2, 11));
+    }
+
+    [Fact]
+    public async Task DeleteGet_NonExistentId_ReturnsNotFound()
+    {
+        // Arrange
+        long id = 999;
+
+        // Act
+        var result = await _controller.Delete(id);
+
+        // Assert
+        result.Should().BeOfType<NotFoundResult>();
+    }
+
+    [Fact]
+    public async Task DeleteConfirmed_ValidId_DeletesUserAndRedirects()
+    {
+        // Arrange
+        long id = 1;
+
+        // Act
+        var result = await _controller.DeleteConfirmed(id);
+
+        // Assert
+        var redirectResult = result.Should().BeOfType<RedirectToActionResult>().Subject;
+        redirectResult.ActionName.Should().Be("List");
+        var deletedUser = await _dataContext.Users!.FindAsync(1L);
+        deletedUser.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteConfirmed_NonExistentId_ReturnsNotFound()
+    {
+        // Arrange
+        long id = 999;
+
+        // Act
+        var result = await _controller.DeleteConfirmed(id);
+
+        // Assert
+        result.Should().BeOfType<NotFoundResult>();
+    }
 }

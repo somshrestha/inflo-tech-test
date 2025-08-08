@@ -188,4 +188,53 @@ public class UsersController : Controller
         }
     }
 
+    [HttpGet("delete/{id}")]
+    public async Task<IActionResult> Delete(long id)
+    {
+        try
+        {
+            var user = await _userService.GetByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var model = new UserViewModel
+            {
+                Id = user.Id,
+                Forename = user.Forename,
+                Surname = user.Surname,
+                Email = user.Email,
+                IsActive = user.IsActive,
+                DateOfBirth = user.DateOfBirth
+            };
+
+            return View(model);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "An error occurred while deleting the user.");
+        }
+    }
+
+    [HttpPost("delete/{id}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(long id)
+    {
+        try
+        {
+            var user = await _userService.GetByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            await _userService.DeleteAsync(user);
+            return RedirectToAction(nameof(List));
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "An error occurred while deleting the user.");
+        }
+    }
 }

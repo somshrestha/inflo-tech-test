@@ -98,6 +98,7 @@ public class DataContextTests : IDisposable
         // Assert
         result.Should().NotBeNull();
     }
+
     [Fact]
     public async Task GetByIdAsync_NonExistentUser_ReturnsNull()
     {

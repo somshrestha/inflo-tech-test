@@ -211,4 +211,48 @@ public class UserServiceTests
         // Assert
         _dataContextMock.Verify(dc => dc.UpdateAsync(user), Times.Once());
     }
+
+    [Fact]
+    public async Task DeleteAsync_ValidUser_CallsDataContextDeleteAsync()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Forename = "Johnny",
+            Surname = "User",
+            Email = "juser@example.com",
+            IsActive = true,
+            DateOfBirth = new DateTime(1990, 4, 21)
+        };
+        _dataContextMock.Setup(dc => dc.DeleteAsync(It.IsAny<User>())).Returns(Task.CompletedTask).Verifiable();
+
+        // Act
+        await _userService.DeleteAsync(user);
+
+        // Assert
+        _dataContextMock.Verify(dc => dc.DeleteAsync(user), Times.Once());
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenDataContextThrowsException_PropagatesException()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Forename = "Johnny",
+            Surname = "User",
+            Email = "juser@example.com",
+            IsActive = true,
+            DateOfBirth = new DateTime(1990, 4, 21)
+        };
+        var exceptionMessage = "Database delete error";
+        _dataContextMock.Setup(dc => dc.DeleteAsync(It.IsAny<User>())).ThrowsAsync(new Exception(exceptionMessage));
+
+        // Act & Assert
+        await FluentActions.Invoking(() => _userService.DeleteAsync(user))
+            .Should().ThrowAsync<Exception>().WithMessage(exceptionMessage);
+        _dataContextMock.Verify(dc => dc.DeleteAsync(user), Times.Once());
+    }
 }

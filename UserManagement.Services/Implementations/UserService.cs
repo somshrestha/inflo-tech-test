@@ -37,4 +37,9 @@ public class UserService : IUserService
     {
         await _dataContext.UpdateAsync(user);
     }
+
+    public async Task DeleteAsync(User user)
+    {
+        await _dataContext.DeleteAsync(user);
+    }
 }
