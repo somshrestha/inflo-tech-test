@@ -48,11 +48,29 @@ public class UserService : IUserService
     public async Task UpdateAsync(User user)
     {
         await _dataContext.UpdateAsync(user);
+
+        var auditLog = new AuditLog
+        {
+            UserId = user.Id,
+            ActionType = "Update",
+            Timestamp = DateTime.UtcNow,
+            Details = $"User {user.Forename} {user.Surname} updated with email {user.Email}, IsActive: {user.IsActive}"
+        };
+        await _dataContext.CreateAsync(auditLog);
     }
 
     public async Task DeleteAsync(User user)
     {
         await _dataContext.DeleteAsync(user);
+
+        var auditLog = new AuditLog
+        {
+            UserId = user.Id,
+            ActionType = "Delete",
+            Timestamp = DateTime.UtcNow,
+            Details = $"User {user.Forename} {user.Surname} deleted with email {user.Email}"
+        };
+        await _dataContext.CreateAsync(auditLog);
     }
 
     public async Task<IEnumerable<AuditLog>> GetUserAuditLogs(long userId)

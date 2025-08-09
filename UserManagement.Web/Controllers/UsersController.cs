@@ -16,7 +16,10 @@ public class UsersController : Controller
     private readonly IUserService _userService;
     private readonly IMapper _mapper;
     private readonly IUserValidator _userValidator;
-    public UsersController(IUserService userService, IMapper mapper, IUserValidator userValidator)
+    public UsersController(
+        IUserService userService,
+        IMapper mapper,
+        IUserValidator userValidator)
     {
         _userService = userService;
         _mapper = mapper;

@@ -1,0 +1,24 @@
+﻿@model UserManagement.Web.Models.AuditLogs.AuditLogViewModel
+
+<h2>Audit Log Details</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <dl class="row">
+            <dt class="col-sm-4">ID</dt>
+            <dd class="col-sm-8">@Model.Id</dd>
+            <dt class="col-sm-4">User ID</dt>
+            <dd class="col-sm-8">@Model.UserId</dd>
+            <dt class="col-sm-4">Action</dt>
+            <dd class="col-sm-8">@Model.ActionType</dd>
+            <dt class="col-sm-4">Timestamp</dt>
+            <dd class="col-sm-8">@Model.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</dd>
+            <dt class="col-sm-4">Details</dt>
+            <dd class="col-sm-8">@Model.Details</dd>
+        </dl>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index" class="btn btn-secondary">Back to Logs</a>
+</div>

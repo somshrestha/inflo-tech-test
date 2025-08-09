@@ -18,10 +18,8 @@
             <dt class="col-sm-4">Active</dt>
             <dd class="col-sm-8">@(Model.User.IsActive ? "Yes" : "No")</dd>
         </dl>
-        <div>
-            <a asp-action="List" class="btn btn-secondary">Back to List</a>
-        </div>
     </div>
+
     <div class="table-responsive">
         <table class="table table-striped">
             <thead>
@@ -45,8 +43,12 @@
                             @log.Details
                         </td>
                     </tr>
-                };
+                }
             </tbody>
         </table>
+
+        <div>
+            <a asp-action="List" class="btn btn-secondary">Back to List</a>
         </div>
     </div>
+</div>
