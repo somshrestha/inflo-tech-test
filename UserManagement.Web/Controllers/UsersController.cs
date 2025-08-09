@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using UserManagement.Models;
 using UserManagement.Services.Domain.Interfaces;
+using UserManagement.Web.Models.AuditLogs;
 using UserManagement.Web.Models.Users;
 using UserManagement.Web.UserHelpers;
 
@@ -83,7 +84,12 @@ public class UsersController : Controller
             if (user == null)
                 return NotFound();
 
-            var model = _mapper.Map<UserViewModel>(user);
+            var auditLogs = await _userService.GetUserAuditLogs(id);
+            var model = new UserWithAuditViewModel
+            {
+                User = _mapper.Map<UserViewModel>(user),
+                AuditLogs = auditLogs.Select(_mapper.Map<AuditLogViewModel>).ToList()
+            };
 
             return View(model);
         }

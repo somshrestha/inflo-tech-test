@@ -1,10 +1,28 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using UserManagement.Data.Entities;
+using UserManagement.Models;
 
 namespace UserManagement.Data;
 
 public interface IDataContext
 {
+    /// <summary>
+    /// Generic DbSet for accessing entities
+    /// </summary>
+    DbSet<TEntity> Set<TEntity>() where TEntity : class;
+
+    /// <summary>
+    /// DbSet for Users
+    /// </summary>
+    DbSet<User> Users { get; }
+
+    /// <summary>
+    /// DbSet for AuditLogs
+    /// </summary>
+    DbSet<AuditLog> AuditLogs { get; }
+
     /// <summary>
     /// Get a list of items
     /// </summary>

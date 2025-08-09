@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using UserManagement.Data.Entities;
 using UserManagement.Models;
 
 namespace UserManagement.Services.Domain.Interfaces;
@@ -46,4 +47,11 @@ public interface IUserService
     /// <param name="user"></param>
     /// <returns></returns>
     Task DeleteAsync(User user);
+
+    /// <summary>
+    /// Gets audit logs for user by user id
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    Task<IEnumerable<AuditLog>> GetUserAuditLogs(long userId);
 }

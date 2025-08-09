@@ -1,4 +1,4 @@
-﻿@model UserManagement.Web.Models.Users.UserViewModel
+﻿@model UserManagement.Web.Models.Users.UserWithAuditViewModel
 
 <h2>View User</h2>
 
@@ -6,20 +6,47 @@
     <div class="col-md-6">
         <dl class="row">
             <dt class="col-sm-4">ID</dt>
-            <dd class="col-sm-8">@Model.Id</dd>
+            <dd class="col-sm-8">@Model.User.Id</dd>
             <dt class="col-sm-4">Forename</dt>
-            <dd class="col-sm-8">@Model.Forename</dd>
+            <dd class="col-sm-8">@Model.User.Forename</dd>
             <dt class="col-sm-4">Surname</dt>
-            <dd class="col-sm-8">@Model.Surname</dd>
+            <dd class="col-sm-8">@Model.User.Surname</dd>
             <dt class="col-sm-4">Email</dt>
-            <dd class="col-sm-8">@Model.Email</dd>
+            <dd class="col-sm-8">@Model.User.Email</dd>
             <dt class="col-sm-4">Date of Birth</dt>
-            <dd class="col-sm-8">@Model.DateOfBirth?.ToString("yyyy-MM-dd")</dd>
+            <dd class="col-sm-8">@Model.User.DateOfBirth?.ToString("yyyy-MM-dd")</dd>
             <dt class="col-sm-4">Active</dt>
-            <dd class="col-sm-8">@(Model.IsActive ? "Yes" : "No")</dd>
+            <dd class="col-sm-8">@(Model.User.IsActive ? "Yes" : "No")</dd>
         </dl>
         <div>
             <a asp-action="List" class="btn btn-secondary">Back to List</a>
         </div>
     </div>
-</div>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Timestamp</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.AuditLogs)  
+                {  
+                    <tr>
+                        <td>
+                            @log.ActionType
+                        </td>
+                        <td>
+                            @log.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                        </td>
+                        <td>
+                            @log.Details
+                        </td>
+                    </tr>
+                };
+            </tbody>
+        </table>
+        </div>
+    </div>

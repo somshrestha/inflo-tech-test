@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using UserManagement.Data;
+using UserManagement.Data.Entities;
 using UserManagement.Models;
 using UserManagement.Services.Domain.Interfaces;
 
@@ -26,6 +29,15 @@ public class UserService : IUserService
     public async Task CreateAsync(User user)
     {
         await _dataContext.CreateAsync(user);
+
+        var auditLog = new AuditLog
+        {
+            UserId = user.Id,
+            ActionType = "Create",
+            Timestamp = DateTime.UtcNow,
+            Details = $"User {user.Forename} {user.Surname} created with email {user.Email}"
+        };
+        await _dataContext.CreateAsync(auditLog);
     }
 
     public async Task<User?> GetByIdAsync(long id)
@@ -41,5 +53,13 @@ public class UserService : IUserService
     public async Task DeleteAsync(User user)
     {
         await _dataContext.DeleteAsync(user);
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetUserAuditLogs(long userId)
+    {
+        return await _dataContext.AuditLogs
+            .Where(al => al.UserId == userId)
+            .OrderByDescending(al => al.Timestamp)
+            .ToListAsync();
     }
 }

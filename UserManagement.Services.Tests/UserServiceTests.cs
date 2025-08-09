@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Moq.EntityFrameworkCore;
+using UserManagement.Data.Entities;
 using UserManagement.Models;
 using UserManagement.Services.Domain.Implementations;
 
@@ -25,6 +27,15 @@ public class UserServiceTests
             new User { Id = 1, Forename = "Johnny", Surname = "User", Email = "juser@example.com", IsActive = true, DateOfBirth = new DateTime(1990, 4, 21) },
             new User { Id = 2, Forename = "John", Surname = "Doe", Email = "john.doe@example.com", IsActive = false, DateOfBirth = new DateTime(1988, 8, 11) },
             new User { Id = 3, Forename = "Smith", Surname = "Johnson", Email = "smith.johnson@example.com", IsActive = true, DateOfBirth = new DateTime(1998, 7, 1) }
+        };
+    }
+
+    private static IEnumerable<AuditLog> GetSampleAuditLogs(long userId)
+    {
+        return new List<AuditLog>
+        {
+            new AuditLog { Id = 1, UserId = userId, ActionType = "Create", Timestamp = DateTime.UtcNow.AddDays(-1), Details = "User created" },
+            new AuditLog { Id = 2, UserId = userId, ActionType = "Update", Timestamp = DateTime.UtcNow, Details = "User updated" }
         };
     }
 
@@ -254,5 +265,41 @@ public class UserServiceTests
         await FluentActions.Invoking(() => _userService.DeleteAsync(user))
             .Should().ThrowAsync<Exception>().WithMessage(exceptionMessage);
         _dataContextMock.Verify(dc => dc.DeleteAsync(user), Times.Once());
+    }
+
+    [Fact]
+    public async Task GetUserAuditLogs_ValidUserId_ReturnsOrderedAuditLogs()
+    {
+        // Arrange
+        long userId = 1;
+        var auditLogs = GetSampleAuditLogs(userId);
+        _dataContextMock.Setup(dc => dc.AuditLogs)
+            .ReturnsDbSet(auditLogs);
+
+        // Act
+        var result = await _userService.GetUserAuditLogs(userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().HaveCount(2);
+        result.Should().BeEquivalentTo(auditLogs);
+        result.Should().BeInDescendingOrder(al => al.Timestamp);
+    }
+
+    [Fact]
+    public async Task GetUserAuditLogs_NoAuditLogs_ReturnsEmptyCollection()
+    {
+        // Arrange
+        long userId = 999;
+        var auditLogs = new List<AuditLog>();
+        _dataContextMock.Setup(dc => dc.AuditLogs)
+            .ReturnsDbSet(auditLogs);
+
+        // Act
+        var result = await _userService.GetUserAuditLogs(userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
     }
 }

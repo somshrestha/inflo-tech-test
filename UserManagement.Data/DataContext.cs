@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using UserManagement.Data.Entities;
 using UserManagement.Models;
 
 namespace UserManagement.Data;
@@ -11,7 +12,8 @@ public class DataContext : DbContext, IDataContext
     public DataContext(DbContextOptions<DataContext> options) : base(options) => Database.EnsureCreated();
 
     protected override void OnModelCreating(ModelBuilder model)
-        => model.Entity<User>().HasData(new[]
+    {
+        model.Entity<User>().HasData(new[]
         {
             new User { Id = 1, Forename = "Peter", Surname = "Loew", Email = "ploew@example.com", IsActive = true, DateOfBirth = new DateTime(1988, 2, 11) },
             new User { Id = 2, Forename = "Benjamin Franklin", Surname = "Gates", Email = "bfgates@example.com", IsActive = true, DateOfBirth = new DateTime(1978, 5, 24) },
@@ -26,7 +28,13 @@ public class DataContext : DbContext, IDataContext
             new User { Id = 11, Forename = "Robin", Surname = "Feld", Email = "rfeld@example.com", IsActive = true, DateOfBirth = new DateTime(1995, 7, 20) },
         });
 
-    public DbSet<User>? Users { get; set; }
+        model.Entity<AuditLog>().Property(a => a.ActionType).IsRequired();
+        model.Entity<AuditLog>().Property(a => a.Timestamp).IsRequired();
+    }
+
+    public DbSet<User> Users { get; set; }
+    public DbSet<AuditLog> AuditLogs { get; set; }
+    public override DbSet<TEntity> Set<TEntity>() where TEntity : class => base.Set<TEntity>();
 
     public async Task<IEnumerable<TEntity>> GetAllAsync<TEntity>() where TEntity : class
         => await base.Set<TEntity>().ToListAsync();

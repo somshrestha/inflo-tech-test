@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using UserManagement.Models;
 using UserManagement.Services.Domain.Implementations;
 using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Web.Mapper;
@@ -19,7 +18,6 @@ public class UserControllerTests : IDisposable
 {
     private readonly DataContext _dataContext;
     private readonly UsersController _controller;
-    private bool _isDatabaseSeeded;
 
     public UserControllerTests()
     {
@@ -188,14 +186,14 @@ public class UserControllerTests : IDisposable
 
         // Assert
         var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-        viewResult.Model.Should().BeOfType<UserViewModel>();
-        var model = (UserViewModel)viewResult.Model;
-        model.Id.Should().Be(1);
-        model.Forename.Should().Be("Peter");
-        model.Surname.Should().Be("Loew");
-        model.Email.Should().Be("ploew@example.com");
-        model.IsActive.Should().BeTrue();
-        model.DateOfBirth.Should().Be(new DateTime(1988, 2, 11));
+        viewResult.Model.Should().BeOfType<UserWithAuditViewModel>();
+        var model = (UserWithAuditViewModel)viewResult.Model;
+        model.User.Id.Should().Be(1);
+        model.User.Forename.Should().Be("Peter");
+        model.User.Surname.Should().Be("Loew");
+        model.User.Email.Should().Be("ploew@example.com");
+        model.User.IsActive.Should().BeTrue();
+        model.User.DateOfBirth.Should().Be(new DateTime(1988, 2, 11));
     }
 
     [Fact]
