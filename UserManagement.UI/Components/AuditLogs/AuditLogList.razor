@@ -1,0 +1,138 @@
+﻿@page "/auditlogs"
+
+@using UserManagement.UI.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<h2>Audit Logs</h2>
+
+<div class="mb-3">
+    <div class="input-group me-2" style="width: auto;">
+        <input @bind="search" placeholder="Search..." class="form-control" />
+        <button class="btn btn-outline-secondary" @onclick="LoadLogs">Search</button>
+    </div>
+    <button class="btn btn-secondary" @onclick='() => SetAction(null)'>All Actions</button>
+    <button class="btn btn-primary" @onclick='() => SetAction("Create")'>Create</button>
+    <button class="btn btn-primary" @onclick='() => SetAction("Update")'>Update</button>
+    <button class="btn btn-primary" @onclick='() => SetAction("Delete")'>Delete</button>
+    <div class="form-check ms-3 d-inline-block">
+        <input class="form-check-input" type="checkbox" checked="@sortDescending" @onchange="ToggleSort" id="sortDesc" />
+        <label class="form-check-label" for="sortDesc">Sort Descending</label>
+    </div>
+</div>
+
+@if (logs == null)
+{
+    <p>Loading...</p>
+}
+else if (!logs.Any())
+{
+    <p>No logs found.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>User ID</th>
+                <th>Action</th>
+                <th>Details</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var log in logs)
+            {
+                <tr>
+                    <td>@log.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>@log.UserId</td>
+                    <td>@log.ActionType</td>
+                    <td>@(log.Details?.Substring(0, Math.Min(50, log.Details.Length)) ?? "")...</td>
+                    <td>
+                        <button class="btn btn-info btn-sm" @onclick="() => ViewDetails(log.Id)">Details</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between mt-3">
+        <button class="btn btn-secondary" disabled="@(pageNumber <= 1)" @onclick="PrevPage">Previous</button>
+        <span>Page @pageNumber of @((int)Math.Ceiling((double)total / pageSize)) (Total: @total)</span>
+        <button class="btn btn-secondary" disabled="@(pageNumber* pageSize >= total)" @onclick="NextPage">Next</button>
+    </div>
+}
+
+@code {
+    private List<AuditLog>? logs;
+    private int total;
+    private int pageNumber = 1;
+    private int pageSize = 10;
+    private string? search;
+    private string? actionType;
+    private bool sortDescending = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLogs();
+    }
+
+    private async Task LoadLogs()
+    {
+        var query = $"auditlogs?page={pageNumber}&pageSize={pageSize}";
+        if (!string.IsNullOrEmpty(search)) query += $"&search={search}";
+        if (!string.IsNullOrEmpty(actionType)) query += $"&actionType={actionType}";
+        query += $"&sortDescending={sortDescending}";
+
+        var response = await Http.GetFromJsonAsync<AuditLogResponse>(query);
+        if (response != null)
+        {
+            logs = response.Logs ?? new List<AuditLog>();
+            total = response.Total;
+        }
+        else
+        {
+            logs = new List<AuditLog>();
+            total = 0;
+        }
+    }
+
+    private async Task SetAction(string? type)
+    {
+        actionType = type;
+        pageNumber = 1;
+        await LoadLogs();
+    }
+
+    private async Task ToggleSort(ChangeEventArgs e)
+    {
+        sortDescending = (bool)e.Value!;
+        pageNumber = 1;
+        await LoadLogs();
+    }
+
+    private async Task PrevPage()
+    {
+        if (pageNumber > 1)
+        {
+            pageNumber--;
+            await LoadLogs();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (pageNumber * pageSize < total)
+        {
+            pageNumber++;
+            await LoadLogs();
+        }
+    }
+
+    private void ViewDetails(long id)
+    {
+        Navigation.NavigateTo($"/auditlogs/{id}");
+    }
+}

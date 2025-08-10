@@ -1,0 +1,61 @@
+﻿@page "/users/view/{Id:long}"
+@using System.Net.Http.Json
+@using UserManagement.UI.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<h2>User Details</h2>
+
+@if (user == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <h4>User Information</h4>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">ID</dt>
+                <dd class="col-sm-9">@user.Id</dd>
+
+                <dt class="col-sm-3">Forename</dt>
+                <dd class="col-sm-9">@user.Forename</dd>
+
+                <dt class="col-sm-3">Surname</dt>
+                <dd class="col-sm-9">@user.Surname</dd>
+
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">@user.Email</dd>
+
+                <dt class="col-sm-3">Active</dt>
+                <dd class="col-sm-9">@(user.IsActive ? "Yes" : "No")</dd>
+
+                <dt class="col-sm-3">Date of Birth</dt>
+                <dd class="col-sm-9">@user.DateOfBirth?.ToString("yyyy-MM-dd")</dd>
+            </dl>
+        </div>
+        <div class="card-footer">
+            <button class="btn btn-secondary" @onclick="ReturnToList">Back to List</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public long Id { get; set; }
+
+    private User? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await Http.GetFromJsonAsync<User>($"users/{Id}");
+    }
+
+    private void ReturnToList()
+    {
+        Navigation.NavigateTo("/users");
+    }
+}

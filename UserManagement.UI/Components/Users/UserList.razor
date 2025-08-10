@@ -1,0 +1,94 @@
+﻿@page "/users"
+@using System.Net.Http.Json
+@using UserManagement.UI.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<h2>User List</h2>
+
+<div class="mb-3">
+    <button class="btn btn-secondary" @onclick="() => Filter(null)">Show All</button>
+    <button class="btn btn-primary" @onclick="() => Filter(true)">Active Only</button>
+    <button class="btn btn-primary" @onclick="() => Filter(false)">Non Active</button>
+    <button class="btn btn-success float-end" @onclick="AddUser">Add User</button>
+</div>
+
+@if (users == null)
+{
+    <p>Loading...</p>
+}
+else if (!users.Any())
+{
+    <p>No users found.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Forename</th>
+                <th>Surname</th>
+                <th>Email</th>
+                <th>Active</th>
+                <th>Date of Birth</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                <tr>
+                    <td>@user.Id</td>
+                    <td>@user.Forename</td>
+                    <td>@user.Surname</td>
+                    <td>@user.Email</td>
+                    <td>@(user.IsActive ? "Yes" : "No")</td>
+                    <td>@user.DateOfBirth?.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <button class="btn btn-info btn-sm" @onclick="() => ViewUser(user.Id)">View</button>
+                        <button class="btn btn-warning btn-sm" @onclick="() => EditUser(user.Id)">Edit</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteUser(user.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@code {
+    private List<User>? users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Filter(null);
+    }
+
+    private async Task Filter(bool? isActive)
+    {
+        var url = isActive.HasValue ? $"users/filter?isActive={isActive.Value}" : "users";
+        users = await Http.GetFromJsonAsync<List<User>>(url);
+    }
+
+    private void AddUser()
+    {
+        Navigation.NavigateTo("/users/add");
+    }
+
+    private void ViewUser(long id)
+    {
+        Navigation.NavigateTo($"/users/view/{id}");
+    }
+
+    private void EditUser(long id)
+    {
+        Navigation.NavigateTo($"/users/edit/{id}");
+    }
+
+    private async Task DeleteUser(long id)
+    {
+        await Http.DeleteAsync($"users/{id}");
+        await Filter(null);
+    }
+}

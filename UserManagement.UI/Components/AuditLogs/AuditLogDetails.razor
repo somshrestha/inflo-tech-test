@@ -1,0 +1,57 @@
+﻿@page "/auditlogs/{Id:long}"
+@using UserManagement.UI.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<h2>Audit Log Details</h2>
+
+@if (log == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <h4>Audit Log Information</h4>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">ID</dt>
+                <dd class="col-sm-9">@log.Id</dd>
+
+                <dt class="col-sm-3">User ID</dt>
+                <dd class="col-sm-9">@log.UserId</dd>
+
+                <dt class="col-sm-3">Action</dt>
+                <dd class="col-sm-9">@log.ActionType</dd>
+
+                <dt class="col-sm-3">Timestamp</dt>
+                <dd class="col-sm-9">@log.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</dd>
+
+                <dt class="col-sm-3">Details</dt>
+                <dd class="col-sm-9">@log.Details</dd>
+            </dl>
+        </div>
+        <div class="card-footer">
+            <button class="btn btn-secondary" @onclick="ReturnToList">Back to List</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public long Id { get; set; }
+    private AuditLog? log;
+
+    protected override async Task OnInitializedAsync()
+    {
+        log = await Http.GetFromJsonAsync<AuditLog>($"auditlogs/{Id}");
+    }
+
+    private void ReturnToList()
+    {
+        Navigation.NavigateTo("/auditlogs");
+    }
+}

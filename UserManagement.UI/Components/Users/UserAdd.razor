@@ -1,0 +1,52 @@
+﻿@page "/users/add"
+@using UserManagement.UI.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<h2>Add User</h2>
+
+<div class="card">
+    <div class="card-header">
+        <h4>Create New User</h4>
+    </div>
+    <div class="card-body">
+        <EditForm Model="@user" OnValidSubmit="CreateUser">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="form-group mb-3">
+                <label>Forename: <InputText @bind-Value="user.Forename" /></label>
+            </div>
+            <div class="form-group mb-3">
+                <label>Surname: <InputText @bind-Value="user.Surname" /></label>
+            </div>
+            <div class="form-group mb-3">
+                <label>Email: <InputText @bind-Value="user.Email" /></label>
+            </div>
+            <div class="form-group mb-3">
+                <label>Active: <InputCheckbox @bind-Value="user.IsActive" /></label>
+            </div>
+            <div class="form-group mb-3">
+                <label>Date of Birth: <InputDate @bind-Value="user.DateOfBirth" /></label>
+            </div>
+            <div class="form-group">
+                <button class="btn btn-primary" type="submit">Save</button>
+                <button class="btn btn-secondary" @onclick="ReturnToList">Back to List</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private User user = new();
+
+    private async Task CreateUser()
+    {
+        await Http.PostAsJsonAsync("users", user);
+        Navigation.NavigateTo("/users");
+    }
+
+    private void ReturnToList()
+    {
+        Navigation.NavigateTo("/users");
+    }
+}

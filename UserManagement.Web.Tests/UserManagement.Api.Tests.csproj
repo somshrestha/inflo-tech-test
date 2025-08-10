@@ -21,7 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\UserManagement.Web\UserManagement.Web.csproj" />
+    <ProjectReference Include="..\UserManagement.Api\UserManagement.Api.csproj" />
+    <ProjectReference Include="..\UserManagement.Data\UserManagement.Data.csproj" />
+    <ProjectReference Include="..\UserManagement.UI\UserManagement.UI.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,66 @@
+﻿@page "/users/edit/{Id:long}"
+@using UserManagement.UI.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<h2>Edit User</h2>
+
+@if (user == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <h4>Update User Information</h4>
+        </div>
+        <div class="card-body">
+            <EditForm Model="@user" OnValidSubmit="UpdateUser">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="form-group mb-3">
+                    <label>Forename: <InputText @bind-Value="user.Forename" /></label>
+                </div>
+                <div class="form-group mb-3">
+                    <label>Surname: <InputText @bind-Value="user.Surname" /></label>
+                </div>
+                <div class="form-group mb-3">
+                    <label>Email: <InputText @bind-Value="user.Email" /></label>
+                </div>
+                <div class="form-group mb-3">
+                    <label>Active: <InputCheckbox @bind-Value="user.IsActive" /></label>
+                </div>
+                <div class="form-group mb-3">
+                    <label>Date of Birth: <InputDate @bind-Value="user.DateOfBirth" /></label>
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-primary" type="submit">Save</button>
+                    <button class="btn btn-secondary" @onclick="ReturnToList">Back to List</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public long Id { get; set; }
+    private User? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await Http.GetFromJsonAsync<User>($"users/{Id}");
+    }
+
+    private async Task UpdateUser()
+    {
+        await Http.PutAsJsonAsync($"users/{Id}", user);
+        Navigation.NavigateTo("/users");
+    }
+
+    private void ReturnToList()
+    {
+        Navigation.NavigateTo("/users");
+    }
+}

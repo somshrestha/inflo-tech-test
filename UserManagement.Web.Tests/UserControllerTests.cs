@@ -1,38 +1,33 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using UserManagement.Api.Controllers;
 using UserManagement.Data;
 using UserManagement.Data.Interceptors;
+using UserManagement.Models;
 using UserManagement.Services.Domain.Implementations;
-using UserManagement.Services.Domain.Interfaces;
-using UserManagement.Web.Mapper;
-using UserManagement.Web.Models.Users;
-using UserManagement.Web.UserHelpers;
-using UserManagement.WebMS.Controllers;
 
-namespace UserManagement.Web.Tests;
+namespace UserManagement.Api.Tests;
 
-public class UserControllerTests : IDisposable
+public class UsersControllerTests : IDisposable
 {
     private readonly DataContext _dataContext;
     private readonly UsersController _controller;
 
-    public UserControllerTests()
+    public UsersControllerTests()
     {
         var services = new ServiceCollection();
 
         services.AddLogging(builder => builder.AddConsole());
+
         services.AddDbContext<DataContext>(options =>
-            options.UseInMemoryDatabase(($"UserManagement.Data.DataContext_{Guid.NewGuid()}"))
-                    .AddInterceptors(new AuditSaveChangesInterceptor()));
-
-        services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
-
-        services.AddScoped<IUserValidator, UserValidator>();
+            options.UseInMemoryDatabase($"UserManagement.Data.DataContext_{Guid.NewGuid()}")
+                   .AddInterceptors(new AuditSaveChangesInterceptor()));
 
         var serviceProvider = services.BuildServiceProvider();
         _dataContext = serviceProvider.GetRequiredService<DataContext>();
@@ -40,9 +35,7 @@ public class UserControllerTests : IDisposable
         _dataContext.Database.EnsureCreated();
 
         var userService = new UserService(_dataContext);
-        var mapper = serviceProvider.GetRequiredService<IMapper>();
-        var userValidator = serviceProvider.GetRequiredService<IUserValidator>();
-        _controller = new UsersController(userService, mapper, userValidator);
+        _controller = new UsersController(userService);
     }
 
     public void Dispose()
@@ -52,205 +45,108 @@ public class UserControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task List_NoFilter_ReturnsAllUsers()
+    public async Task GetAll_ReturnsAllUsers()
     {
         // Act
-        var result = await _controller.List(null);
+        var result = await _controller.GetAll();
 
         // Assert
-        result.Should().BeOfType<ViewResult>();
-        var viewResult = (ViewResult)result;
-        viewResult.Model.Should().BeOfType<UserListViewModel>();
-        var model = (UserListViewModel)viewResult.Model;
-        model.Items.Should().HaveCount(11);
-        model.Items.Should().Contain(item => item.Forename == "Peter" && item.Surname == "Loew" && item.DateOfBirth == new DateTime(1988, 2, 11));
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var users = okResult!.Value as IEnumerable<User>;
+        users.Should().HaveCount(11);
     }
 
     [Fact]
-    public async Task List_ActiveFilterTrue_ReturnsOnlyActiveUsers()
+    public async Task FilterByActive_True_ReturnsOnlyActiveUsers()
     {
         // Act
-        var result = await _controller.List(true);
+        var result = await _controller.FilterByActive(true);
 
         // Assert
-        result.Should().BeOfType<ViewResult>();
-        var viewResult = (ViewResult)result;
-        viewResult.Model.Should().BeOfType<UserListViewModel>();
-        var model = (UserListViewModel)viewResult.Model;
-        model.Items.Should().HaveCount(7);
-        model.Items.Should().OnlyContain(item => item.IsActive);
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var users = okResult!.Value as IEnumerable<User>;
+        users.Should().HaveCount(7);
+        users!.First().IsActive.Should().BeTrue();
     }
 
     [Fact]
-    public async Task List_ActiveFilterFalse_ReturnsOnlyInactiveUsers()
+    public async Task FilterByActive_False_ReturnsOnlyInactiveUsers()
     {
         // Act
-        var result = await _controller.List(false);
+        var result = await _controller.FilterByActive(false);
 
         // Assert
-        result.Should().BeOfType<ViewResult>();
-        var viewResult = (ViewResult)result;
-        viewResult.Model.Should().BeOfType<UserListViewModel>();
-        var model = (UserListViewModel)viewResult.Model;
-        model.Items.Should().HaveCount(4);
-        model.Items.Should().OnlyContain(item => !item.IsActive);
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var users = okResult!.Value as IEnumerable<User>;
+        users.Should().HaveCount(4);
+        users!.First().IsActive.Should().BeFalse();
     }
 
     [Fact]
-    public async Task List_DatabaseError_ReturnsStatusCode500()
+    public async Task GetById_ValidId_ReturnsUser()
+    {
+        // Act
+        var result = await _controller.GetById(1);
+
+        // Assert
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var user = okResult!.Value as User;
+        user.Should().NotBeNull();
+        user!.Id.Should().Be(1);
+        user.Forename.Should().Be("Peter");
+        user.Surname.Should().Be("Loew");
+        user.Email.Should().Be("ploew@example.com");
+        user.IsActive.Should().BeTrue();
+        user.DateOfBirth.Should().Be(new DateTime(1988, 2, 11));
+    }
+
+    [Fact]
+    public async Task GetById_NonExistentId_ReturnsNotFound()
+    {
+        // Act
+        var result = await _controller.GetById(999);
+
+        // Assert
+        result.Should().BeOfType<NotFoundResult>();
+    }
+
+    [Fact]
+    public async Task Create_ValidModel_CreatesUserAndReturnsCreated()
     {
         // Arrange
-        var userServiceMock = new Mock<IUserService>();
-        userServiceMock.Setup(s => s.FilterByActive(It.IsAny<bool?>()))
-            .ThrowsAsync(new Exception("Simulated database error"));
-        var errorController = new UsersController(userServiceMock.Object, Mock.Of<IMapper>(), Mock.Of<IUserValidator>());
-
-        // Act
-        var result = await errorController.List(null);
-
-        // Assert
-        result.Should().BeOfType<ObjectResult>();
-        var statusCodeResult = (ObjectResult)result;
-        statusCodeResult.StatusCode.Should().Be(500);
-        statusCodeResult.Value.Should().Be("An error occurred while retrieving the user list.");
-    }
-
-    [Fact]
-    public void Add_Get_ReturnsViewWithEmptyModel()
-    {
-        // Act
-        var result = _controller.Add();
-
-        // Assert
-        result.Should().BeOfType<ViewResult>();
-        var viewResult = (ViewResult)result;
-        viewResult.Model.Should().BeOfType<UserViewModel>();
-        var model = (UserViewModel)viewResult.Model;
-        model.Forename.Should().BeEmpty();
-        model.DateOfBirth.Should().BeNull();
-        model.IsActive.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task Add_Post_ValidModel_CreatesUserAndRedirects()
-    {
-        // Arrange
-        var model = new UserViewModel
+        var newUser = new User
         {
             Forename = "Test",
             Surname = "User",
             Email = "testuser@example.com",
-            DateOfBirth = new DateTime(2000, 7, 15),
-            IsActive = true
+            IsActive = true,
+            DateOfBirth = new DateTime(2000, 7, 15)
         };
 
         // Act
-        var result = await _controller.Add(model);
+        var result = await _controller.Create(newUser);
 
         // Assert
-        result.Should().BeOfType<RedirectToActionResult>();
-        var redirectResult = (RedirectToActionResult)result;
-        redirectResult.ActionName.Should().Be("List");
+        var createdResult = result as CreatedAtActionResult;
+        createdResult.Should().NotBeNull();
+        createdResult!.ActionName.Should().Be("GetById");
+        createdResult.RouteValues!["id"].Should().Be(newUser.Id);
+        var returnedUser = createdResult.Value as User;
+        returnedUser.Should().BeEquivalentTo(newUser);
+
+        var dbUser = await _dataContext.Users.FindAsync(newUser.Id);
+        dbUser.Should().BeEquivalentTo(newUser);
     }
 
     [Fact]
-    public async Task Add_Post_InvalidModel_ReturnsViewWithErrors()
+    public async Task Update_ValidModel_UpdatesUserAndReturnsNoContent()
     {
         // Arrange
-        var model = new UserViewModel
-        {
-            Forename = "",
-            Surname = "User",
-            Email = "invalidemail",
-            DateOfBirth = new DateTime(2000, 7, 15),
-            IsActive = true
-        };
-        _controller.ModelState.AddModelError("Forename", "Forename is required.");
-        _controller.ModelState.AddModelError("Email", "Invalid email format.");
-
-        // Act
-        var result = await _controller.Add(model);
-
-        // Assert
-        result.Should().BeOfType<ViewResult>();
-        var viewResult = (ViewResult)result;
-        viewResult.Model.Should().Be(model);
-        viewResult.ViewData.ModelState.IsValid.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task View_ValidId_ReturnsViewResultWithUserViewModel()
-    {
-        // Arrange
-        long id = 1;
-
-        // Act
-        var result = await _controller.View(id);
-
-        // Assert
-        var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-        viewResult.Model.Should().BeOfType<UserWithAuditViewModel>();
-        var model = (UserWithAuditViewModel)viewResult.Model;
-        model.User.Id.Should().Be(1);
-        model.User.Forename.Should().Be("Peter");
-        model.User.Surname.Should().Be("Loew");
-        model.User.Email.Should().Be("ploew@example.com");
-        model.User.IsActive.Should().BeTrue();
-        model.User.DateOfBirth.Should().Be(new DateTime(1988, 2, 11));
-    }
-
-    [Fact]
-    public async Task View_NonExistentId_ReturnsNotFound()
-    {
-        // Arrange
-        long id = 999;
-
-        // Act
-        var result = await _controller.View(id);
-
-        // Assert
-        result.Should().BeOfType<NotFoundResult>();
-    }
-
-    [Fact]
-    public async Task EditGet_ValidId_ReturnsViewResultWithUserViewModel()
-    {
-        // Arrange
-        long id = 1;
-
-        // Act
-        var result = await _controller.Edit(id);
-
-        // Assert
-        var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-        viewResult.Model.Should().BeOfType<UserViewModel>();
-        var model = (UserViewModel)viewResult.Model;
-        model.Id.Should().Be(1);
-        model.Forename.Should().Be("Peter");
-        model.Surname.Should().Be("Loew");
-        model.Email.Should().Be("ploew@example.com");
-        model.IsActive.Should().BeTrue();
-        model.DateOfBirth.Should().Be(new DateTime(1988, 2, 11));
-    }
-
-    [Fact]
-    public async Task EditGet_NonExistentId_ReturnsNotFound()
-    {
-        // Arrange
-        long id = 999;
-
-        // Act
-        var result = await _controller.Edit(id);
-
-        // Assert
-        result.Should().BeOfType<NotFoundResult>();
-    }
-
-    [Fact]
-    public async Task EditPost_ValidModel_UpdatesUserAndRedirects()
-    {
-        // Arrange
-        var model = new UserViewModel
+        var updatedUser = new User
         {
             Id = 1,
             Forename = "Updated",
@@ -261,124 +157,59 @@ public class UserControllerTests : IDisposable
         };
 
         // Act
-        var result = await _controller.Edit(1, model);
+        var result = await _controller.Update(1, updatedUser);
 
         // Assert
-        var redirectResult = result.Should().BeOfType<RedirectToActionResult>().Subject;
-        redirectResult.ActionName.Should().Be("List");
-        var updatedUser = await _dataContext.Users!.FindAsync(1L);
-        updatedUser!.Forename.Should().Be("Updated");
-        updatedUser.Surname.Should().Be("Loew");
-        updatedUser.Email.Should().Be("updated@example.com");
-        updatedUser.IsActive.Should().BeFalse();
-        updatedUser.DateOfBirth.Should().Be(new DateTime(1988, 2, 11));
+        result.Should().BeOfType<NoContentResult>();
+
+        var dbUser = await _dataContext.Users.FindAsync(1L);
+        dbUser.Should().BeEquivalentTo(updatedUser);
     }
 
     [Fact]
-    public async Task EditPost_InvalidModel_ReturnsViewWithModel()
+    public async Task Update_MismatchedId_ReturnsBadRequest()
     {
         // Arrange
-        var model = new UserViewModel
-        {
-            Id = 1,
-            Forename = "",
-            Surname = "Loew",
-            Email = "invalid",
-            IsActive = true,
-            DateOfBirth = DateTime.MinValue
-        };
-        _controller.ModelState.AddModelError("Forename", "Forename is required");
-        _controller.ModelState.AddModelError("Email", "Invalid email address");
+        var user = new User { Id = 2 /* mismatch */ };
 
         // Act
-        var result = await _controller.Edit(1, model);
-
-        // Assert
-        var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-        viewResult.Model.Should().BeEquivalentTo(model);
-        _controller.ModelState.ContainsKey("Forename").Should().BeTrue();
-        _controller.ModelState.ContainsKey("Email").Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task EditPost_MismatchedId_ReturnsNotFound()
-    {
-        // Arrange
-        var model = new UserViewModel
-        {
-            Id = 2,
-            Forename = "Test",
-            Surname = "User",
-            Email = "test@example.com",
-            IsActive = true,
-            DateOfBirth = new DateTime(1990, 1, 1)
-        };
-
-        // Act
-        var result = await _controller.Edit(1, model);
+        var result = await _controller.Update(1, user);
 
         // Assert
         result.Should().BeOfType<BadRequestResult>();
     }
 
     [Fact]
-    public async Task DeleteGet_ValidId_ReturnsViewResultWithUserViewModel()
+    public async Task Update_NonExistentId_ReturnsNotFound()
     {
         // Arrange
-        long id = 1;
+        var user = new User { Id = 999 };
 
         // Act
-        var result = await _controller.Delete(id);
-
-        // Assert
-        var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-        viewResult.Model.Should().BeOfType<UserViewModel>();
-        var model = (UserViewModel)viewResult.Model;
-        model.Id.Should().Be(1);
-        model.Forename.Should().Be("Peter");
-        model.Surname.Should().Be("Loew");
-        model.Email.Should().Be("ploew@example.com");
-        model.IsActive.Should().BeTrue();
-        model.DateOfBirth.Should().Be(new DateTime(1988, 2, 11));
-    }
-
-    [Fact]
-    public async Task DeleteGet_NonExistentId_ReturnsNotFound()
-    {
-        // Arrange
-        long id = 999;
-
-        // Act
-        var result = await _controller.Delete(id);
+        var result = await _controller.Update(999, user);
 
         // Assert
         result.Should().BeOfType<NotFoundResult>();
     }
 
     [Fact]
-    public async Task DeleteConfirmed_ValidId_DeletesUserAndRedirects()
+    public async Task Delete_ValidId_DeletesUserAndReturnsNoContent()
     {
-        // Arrange
-        long id = 1;
-
         // Act
-        var result = await _controller.DeleteConfirmed(id);
+        var result = await _controller.Delete(1);
 
         // Assert
-        var redirectResult = result.Should().BeOfType<RedirectToActionResult>().Subject;
-        redirectResult.ActionName.Should().Be("List");
-        var deletedUser = await _dataContext.Users!.FindAsync(1L);
+        result.Should().BeOfType<NoContentResult>();
+
+        var deletedUser = await _dataContext.Users.FindAsync(1L);
         deletedUser.Should().BeNull();
     }
 
     [Fact]
-    public async Task DeleteConfirmed_NonExistentId_ReturnsNotFound()
+    public async Task Delete_NonExistentId_ReturnsNotFound()
     {
-        // Arrange
-        long id = 999;
-
         // Act
-        var result = await _controller.DeleteConfirmed(id);
+        var result = await _controller.Delete(999);
 
         // Assert
         result.Should().BeOfType<NotFoundResult>();

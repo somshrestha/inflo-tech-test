@@ -27,7 +27,7 @@ public class Program
         {
             options.AddPolicy("AllowBlazor", policy =>
             {
-                policy.WithOrigins("https://localhost:7280")
+                policy.WithOrigins("https://localhost:7063")
                       .AllowAnyMethod()
                       .AllowAnyHeader();
             });
