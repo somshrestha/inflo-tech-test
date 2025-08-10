@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using UserManagement.Data;
+using UserManagement.Data.Interceptors;
 using UserManagement.Services.Domain.Implementations;
 using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Web.Mapper;
@@ -12,7 +14,7 @@ using UserManagement.Web.Models.Users;
 using UserManagement.Web.UserHelpers;
 using UserManagement.WebMS.Controllers;
 
-namespace UserManagement.Data.Tests;
+namespace UserManagement.Web.Tests;
 
 public class UserControllerTests : IDisposable
 {
@@ -25,7 +27,8 @@ public class UserControllerTests : IDisposable
 
         services.AddLogging(builder => builder.AddConsole());
         services.AddDbContext<DataContext>(options =>
-            options.UseInMemoryDatabase("UserManagement.Data.DataContext"));
+            options.UseInMemoryDatabase(($"UserManagement.Data.DataContext_{Guid.NewGuid()}"))
+                    .AddInterceptors(new AuditSaveChangesInterceptor()));
 
         services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
@@ -295,27 +298,6 @@ public class UserControllerTests : IDisposable
         viewResult.Model.Should().BeEquivalentTo(model);
         _controller.ModelState.ContainsKey("Forename").Should().BeTrue();
         _controller.ModelState.ContainsKey("Email").Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task EditPost_NonExistentId_ReturnsNotFound()
-    {
-        // Arrange
-        var model = new UserViewModel
-        {
-            Id = 999,
-            Forename = "Test",
-            Surname = "User",
-            Email = "test@example.com",
-            IsActive = true,
-            DateOfBirth = new DateTime(1990, 1, 1)
-        };
-
-        // Act
-        var result = await _controller.Edit(999, model);
-
-        // Assert
-        result.Should().BeOfType<NotFoundResult>();
     }
 
     [Fact]

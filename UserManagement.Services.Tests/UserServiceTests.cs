@@ -148,7 +148,7 @@ public class UserServiceTests
             IsActive = true,
             DateOfBirth = new DateTime(1990, 1, 1)
         };
-        _dataContextMock.Setup(dc => dc.CreateAsync(It.IsAny<User>())).Verifiable();
+        _dataContextMock.Setup(dc => dc.CreateAsync(It.IsAny<User>())).Returns(Task.CompletedTask);
 
         // Act
         await _userService.CreateAsync(user);
@@ -202,25 +202,65 @@ public class UserServiceTests
     }
 
     [Fact]
-    public async Task UpdateAsync_ValidUser_CallsDataContextUpdateAsync()
+    public async Task UpdateAsync_ExistingUser_UpdatesFieldsAndCallsUpdateAsync()
+    {
+        // Arrange
+        var existingUser = new User
+        {
+            Id = 1,
+            Forename = "Johnny",
+            Surname = "User",
+            Email = "juser@example.com",
+            IsActive = true,
+            DateOfBirth = new DateTime(1990, 4, 21)
+        };
+        var updatedUser = new User
+        {
+            Id = 1,
+            Forename = "Updated",
+            Surname = "NewUser",
+            Email = "updated@example.com",
+            IsActive = false,
+            DateOfBirth = new DateTime(1995, 5, 15)
+        };
+        _dataContextMock.Setup(dc => dc.GetByIdAsync<User>(1L)).ReturnsAsync(existingUser);
+        _dataContextMock.Setup(dc => dc.UpdateAsync(It.IsAny<User>())).Returns(Task.CompletedTask);
+
+        // Act
+        await _userService.UpdateAsync(updatedUser);
+
+        // Assert
+        _dataContextMock.Verify(dc => dc.GetByIdAsync<User>(1L), Times.Once());
+        _dataContextMock.Verify(dc => dc.UpdateAsync(It.Is<User>(u =>
+            u.Id == 1 &&
+            u.Forename == "Updated" &&
+            u.Surname == "NewUser" &&
+            u.Email == "updated@example.com" &&
+            u.IsActive == false &&
+            u.DateOfBirth == new DateTime(1995, 5, 15))), Times.Once());
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NonExistentUser_ThrowsInvalidOperationException()
     {
         // Arrange
         var user = new User
         {
-            Id = 1,
+            Id = 999,
             Forename = "Updated",
             Surname = "User",
             Email = "updated@example.com",
             IsActive = false,
-            DateOfBirth = new DateTime(1990, 4, 21)
+            DateOfBirth = new DateTime(1995, 5, 15)
         };
-        _dataContextMock.Setup(dc => dc.UpdateAsync(It.IsAny<User>())).Returns(Task.CompletedTask).Verifiable();
+        _dataContextMock.Setup(dc => dc.GetByIdAsync<User>(999L)).ReturnsAsync((User?)null);
 
-        // Act
-        await _userService.UpdateAsync(user);
-
-        // Assert
-        _dataContextMock.Verify(dc => dc.UpdateAsync(user), Times.Once());
+        // Act & Assert
+        await FluentActions.Invoking(() => _userService.UpdateAsync(user))
+            .Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage($"User with ID {user.Id} not found.");
+        _dataContextMock.Verify(dc => dc.GetByIdAsync<User>(999L), Times.Once());
+        _dataContextMock.Verify(dc => dc.UpdateAsync(It.IsAny<User>()), Times.Never());
     }
 
     [Fact]

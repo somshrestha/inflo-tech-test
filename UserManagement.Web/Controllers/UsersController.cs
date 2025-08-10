@@ -139,11 +139,7 @@ public class UsersController : Controller
                 return View(model);
             }
 
-            var user = await _userService.GetByIdAsync(id);
-            if (user == null)
-                return NotFound();
-
-            _mapper.Map(model, user);
+            var user = _mapper.Map<User>(model);
             await _userService.UpdateAsync(user);
 
             return RedirectToAction(nameof(List));

@@ -29,15 +29,6 @@ public class UserService : IUserService
     public async Task CreateAsync(User user)
     {
         await _dataContext.CreateAsync(user);
-
-        var auditLog = new AuditLog
-        {
-            UserId = user.Id,
-            ActionType = "Create",
-            Timestamp = DateTime.UtcNow,
-            Details = $"User {user.Forename} {user.Surname} created with email {user.Email}"
-        };
-        await _dataContext.CreateAsync(auditLog);
     }
 
     public async Task<User?> GetByIdAsync(long id)
@@ -47,30 +38,22 @@ public class UserService : IUserService
 
     public async Task UpdateAsync(User user)
     {
-        await _dataContext.UpdateAsync(user);
+        var existingUser = await _dataContext.GetByIdAsync<User>(user.Id);
+        if (existingUser == null)
+            throw new InvalidOperationException($"User with ID {user.Id} not found.");
 
-        var auditLog = new AuditLog
-        {
-            UserId = user.Id,
-            ActionType = "Update",
-            Timestamp = DateTime.UtcNow,
-            Details = $"User {user.Forename} {user.Surname} updated with email {user.Email}, IsActive: {user.IsActive}"
-        };
-        await _dataContext.CreateAsync(auditLog);
+        existingUser.Forename = user.Forename;
+        existingUser.Surname = user.Surname;
+        existingUser.Email = user.Email;
+        existingUser.IsActive = user.IsActive;
+        existingUser.DateOfBirth = user.DateOfBirth;
+
+        await _dataContext.UpdateAsync(existingUser);
     }
 
     public async Task DeleteAsync(User user)
     {
         await _dataContext.DeleteAsync(user);
-
-        var auditLog = new AuditLog
-        {
-            UserId = user.Id,
-            ActionType = "Delete",
-            Timestamp = DateTime.UtcNow,
-            Details = $"User {user.Forename} {user.Surname} deleted with email {user.Email}"
-        };
-        await _dataContext.CreateAsync(auditLog);
     }
 
     public async Task<IEnumerable<AuditLog>> GetUserAuditLogs(long userId)

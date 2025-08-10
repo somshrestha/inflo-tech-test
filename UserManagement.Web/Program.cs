@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using UserManagement.Data;
+using UserManagement.Data.Interceptors;
 using UserManagement.Web.Extensions;
 using UserManagement.Web.Mapper;
 using Westwind.AspNetCore.Markdown;
@@ -17,7 +18,9 @@ builder.Services
     .AddControllersWithViews();
 
 builder.Services.AddDbContext<DataContext>(options =>
-    options.UseInMemoryDatabase("UserManagement.Data.DataContext"));
+    options.UseInMemoryDatabase("UserManagement.Data.DataContext")
+            .AddInterceptors(new AuditSaveChangesInterceptor()));
+
 builder.Services.AddAutoMapper(config =>
     config.AddProfile<MappingProfile>(), typeof(Program));
 
