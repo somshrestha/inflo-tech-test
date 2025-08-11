@@ -18,7 +18,12 @@ public class UsersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        // the code that you want to measure comes here
         var users = await _userService.GetAllAsync();
+        watch.Stop();
+        var elapsedMs = watch.ElapsedMilliseconds;
+        Console.WriteLine(elapsedMs);
         return Ok(users);
     }
 
@@ -26,7 +31,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetById(long id)
     {
         var user = await _userService.GetByIdAsync(id);
-        if (user == null) return NotFound();
+        if (user == null) throw new KeyNotFoundException($"User with ID {id} not found.");
         return Ok(user);
     }
 
@@ -40,23 +45,16 @@ public class UsersController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(long id, [FromBody] User user)
     {
-        if (id != user.Id) return BadRequest();
-        try
-        {
-            await _userService.UpdateAsync(user);
-            return NoContent();
-        }
-        catch (InvalidOperationException)
-        {
-            return NotFound();
-        }
+        if (id != user.Id) throw new ArgumentException("ID mismatch.");
+        await _userService.UpdateAsync(user);
+        return NoContent();
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(long id)
     {
         var user = await _userService.GetByIdAsync(id);
-        if (user == null) return NotFound();
+        if (user == null) throw new KeyNotFoundException($"User with ID {id} not found.");
         await _userService.DeleteAsync(user);
         return NoContent();
     }

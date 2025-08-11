@@ -25,7 +25,7 @@ public class AuditLogsController : ControllerBase
     public async Task<IActionResult> GetById(long id)
     {
         var log = await _auditLogsService.GetByIdAsync(id);
-        if (log == null) return NotFound();
+        if (log == null) throw new KeyNotFoundException($"User with ID {id} not found.");
         return Ok(log);
     }
 }

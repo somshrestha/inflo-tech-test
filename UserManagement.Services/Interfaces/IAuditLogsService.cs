@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using UserManagement.Data.Entities;
+﻿using UserManagement.Data.Entities;
 
 namespace UserManagement.Services.Domain.Interfaces;
 public interface IAuditLogsService

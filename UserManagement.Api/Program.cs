@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using UserManagement.Api.Middleware;
 
 namespace UserManagement.Api;
 
@@ -41,6 +42,7 @@ public class Program
 
         app.UseHttpsRedirection();
         app.UseCors("AllowBlazor");
+        app.UseMiddleware<ExceptionMiddleware>();
         app.UseAuthorization();
 
 

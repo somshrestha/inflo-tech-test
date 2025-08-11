@@ -34,7 +34,7 @@ public class DataContext : DbContext, IDataContext
     public override DbSet<TEntity> Set<TEntity>() where TEntity : class => base.Set<TEntity>();
 
     public async Task<IEnumerable<TEntity>> GetAllAsync<TEntity>() where TEntity : class
-        => await base.Set<TEntity>().ToListAsync();
+        => await base.Set<TEntity>().AsNoTracking().ToListAsync();
 
     public async Task<TEntity?> GetByIdAsync<TEntity>(long id) where TEntity : class
        => await base.Set<TEntity>().FindAsync(id);
