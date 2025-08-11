@@ -12,6 +12,7 @@ using UserManagement.Data;
 using UserManagement.Data.Interceptors;
 using UserManagement.Models;
 using UserManagement.Services.Domain.Implementations;
+using UserManagement.Services.Domain.Interfaces;
 
 namespace UserManagement.Api.Tests;
 
@@ -111,11 +112,12 @@ public class UsersControllerTests : IDisposable
     [Fact]
     public async Task GetById_NonExistentId_ReturnsNotFound()
     {
-        // Act
-        var result = await _controller.GetById(999);
+        // Arrange
+        var exceptionMessage = "User with ID 999 not found.";
 
-        // Assert
-        result.Should().BeOfType<NotFoundResult>();
+        // Act && Assert
+        await FluentActions.Invoking(() => _controller.Delete(999))
+            .Should().ThrowAsync<KeyNotFoundException>().WithMessage(exceptionMessage);
     }
 
     [Fact]
@@ -174,26 +176,24 @@ public class UsersControllerTests : IDisposable
     public async Task Update_MismatchedId_ReturnsBadRequest()
     {
         // Arrange
-        var user = new User { Id = 2 /* mismatch */ };
+        var user = new User { Id = 2 };
+        var exceptionMessage = "ID mismatch.";
 
-        // Act
-        var result = await _controller.Update(1, user);
-
-        // Assert
-        result.Should().BeOfType<BadRequestResult>();
+        // Act && Assert
+        await FluentActions.Invoking(() => _controller.Update(1, user))
+            .Should().ThrowAsync<ArgumentException>().WithMessage(exceptionMessage);
     }
-
+    
     [Fact]
     public async Task Update_NonExistentId_ReturnsNotFound()
     {
         // Arrange
         var user = new User { Id = 999 };
+        var exceptionMessage = "User with ID 999 not found.";
 
-        // Act
-        var result = await _controller.Update(999, user);
-
-        // Assert
-        result.Should().BeOfType<NotFoundResult>();
+        // Act && Assert
+        await FluentActions.Invoking(() => _controller.Update(user.Id, user))
+            .Should().ThrowAsync<InvalidOperationException>().WithMessage(exceptionMessage);
     }
 
     [Fact]
@@ -212,10 +212,11 @@ public class UsersControllerTests : IDisposable
     [Fact]
     public async Task Delete_NonExistentId_ReturnsNotFound()
     {
-        // Act
-        var result = await _controller.Delete(999);
+        // Arrange
+        var exceptionMessage = "User with ID 999 not found.";
 
-        // Assert
-        result.Should().BeOfType<NotFoundResult>();
+        // Act && Assert
+        await FluentActions.Invoking(() => _controller.Delete(999))
+            .Should().ThrowAsync<KeyNotFoundException>().WithMessage(exceptionMessage);
     }
 }

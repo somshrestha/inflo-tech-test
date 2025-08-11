@@ -41,28 +41,6 @@ public class DataContextTests : IDisposable
         result.Should().HaveCount(11);
     }
 
-    //[Fact]
-    //public async Task CreateAsync_AddsUserToDatabase()
-    //{
-    //    // Arrange
-    //    var newUser = new User
-    //    {
-    //        Id = 12,
-    //        Forename = "Test",
-    //        Surname = "User",
-    //        Email = "test.user@example.com",
-    //        IsActive = true,
-    //        DateOfBirth = new DateTime(1990, 2, 18)
-    //    };
-
-    //    // Act
-    //    await _dataContext.CreateAsync(newUser);
-    //    var result = await _dataContext.GetAllAsync<User>();
-
-    //    // Assert
-    //    result.Should().HaveCount(12);
-    //}
-
     [Fact]
     public async Task UpdateAsync_UpdatesExistingUser()
     {

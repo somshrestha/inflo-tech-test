@@ -18,12 +18,7 @@ public class UsersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var watch = System.Diagnostics.Stopwatch.StartNew();
-        // the code that you want to measure comes here
         var users = await _userService.GetAllAsync();
-        watch.Stop();
-        var elapsedMs = watch.ElapsedMilliseconds;
-        Console.WriteLine(elapsedMs);
         return Ok(users);
     }
 
