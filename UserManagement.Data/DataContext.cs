@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using UserManagement.Data.Entities;
 using UserManagement.Models;
 
@@ -9,7 +6,7 @@ namespace UserManagement.Data;
 
 public class DataContext : DbContext, IDataContext
 {
-    public DataContext(DbContextOptions<DataContext> options) : base(options) => Database.EnsureCreated();
+    public DataContext(DbContextOptions<DataContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder model)
     {

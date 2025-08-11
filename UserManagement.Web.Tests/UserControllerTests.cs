@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using UserManagement.Api.Controllers;
@@ -22,17 +23,20 @@ public class UsersControllerTests : IDisposable
     public UsersControllerTests()
     {
         var services = new ServiceCollection();
-
         services.AddLogging(builder => builder.AddConsole());
 
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.test.json")
+            .Build();
+
         services.AddDbContext<DataContext>(options =>
-            options.UseInMemoryDatabase($"UserManagement.Data.DataContext_{Guid.NewGuid()}")
+            options.UseSqlServer(configuration.GetConnectionString("TestConnectionForUsers"))
                    .AddInterceptors(new AuditSaveChangesInterceptor()));
 
         var serviceProvider = services.BuildServiceProvider();
         _dataContext = serviceProvider.GetRequiredService<DataContext>();
 
-        _dataContext.Database.EnsureCreated();
+        _dataContext.Database.Migrate();
 
         var userService = new UserService(_dataContext);
         _controller = new UsersController(userService);

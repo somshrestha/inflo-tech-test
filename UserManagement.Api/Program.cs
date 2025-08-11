@@ -1,7 +1,4 @@
-
 using Microsoft.EntityFrameworkCore;
-using UserManagement.Data;
-using UserManagement.Data.Interceptors;
 
 namespace UserManagement.Api;
 
@@ -16,12 +13,12 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services
-            .AddDataAccess()
             .AddDomainServices();
 
-        builder.Services.AddDbContext<DataContext>(options =>
-                options.UseInMemoryDatabase("UserManagement.Data.DataContext")
-                       .AddInterceptors(new AuditSaveChangesInterceptor()));
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+        builder.Services.AddDataAccess(connectionString);
 
         builder.Services.AddCors(options =>
         {

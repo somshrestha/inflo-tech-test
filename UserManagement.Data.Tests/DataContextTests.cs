@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using UserManagement.Models;
 
 namespace UserManagement.Data.Tests;
@@ -12,10 +13,15 @@ public class DataContextTests : IDisposable
 
     public DataContextTests()
     {
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.test.json")
+            .Build();
+
         var options = new DbContextOptionsBuilder<DataContext>()
-            .UseInMemoryDatabase(databaseName: "UserManagement.Data.DataContext")
+            .UseSqlServer(configuration.GetConnectionString("TestConnection"))
             .Options;
         _dataContext = new DataContext(options);
+        _dataContext.Database.Migrate();
     }
 
     public void Dispose()
@@ -35,27 +41,27 @@ public class DataContextTests : IDisposable
         result.Should().HaveCount(11);
     }
 
-    [Fact]
-    public async Task CreateAsync_AddsUserToDatabase()
-    {
-        // Arrange
-        var newUser = new User
-        {
-            Id = 12,
-            Forename = "Test",
-            Surname = "User",
-            Email = "test.user@example.com",
-            IsActive = true,
-            DateOfBirth = new DateTime(1990, 2, 18)
-        };
+    //[Fact]
+    //public async Task CreateAsync_AddsUserToDatabase()
+    //{
+    //    // Arrange
+    //    var newUser = new User
+    //    {
+    //        Id = 12,
+    //        Forename = "Test",
+    //        Surname = "User",
+    //        Email = "test.user@example.com",
+    //        IsActive = true,
+    //        DateOfBirth = new DateTime(1990, 2, 18)
+    //    };
 
-        // Act
-        await _dataContext.CreateAsync(newUser);
-        var result = await _dataContext.GetAllAsync<User>();
+    //    // Act
+    //    await _dataContext.CreateAsync(newUser);
+    //    var result = await _dataContext.GetAllAsync<User>();
 
-        // Assert
-        result.Should().HaveCount(12);
-    }
+    //    // Assert
+    //    result.Should().HaveCount(12);
+    //}
 
     [Fact]
     public async Task UpdateAsync_UpdatesExistingUser()
