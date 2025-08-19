@@ -1,0 +1,63 @@
+name: Publish Artifacts
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # e.g., v1.0.0
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up .NET SDK
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # Cache NuGet packages
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore ./UserManagement.sln
+
+      # Build the solution
+      - name: Build solution
+        run: dotnet build ./UserManagement.sln --configuration Release --no-restore
+
+      # Publish API
+      - name: Publish API
+        run: dotnet publish ./UserManagement.Api/UserManagement.Api.csproj --configuration Release --no-build --output ./publish/api
+
+      # Publish Blazor UI
+      - name: Publish Blazor UI
+        run: dotnet publish ./UserManagement.UI/UserManagement.UI.csproj --configuration Release --no-build --output ./publish/ui
+
+      # Upload API artifacts
+      - name: Upload API artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-artifacts
+          path: ./publish/api/
+          retention-days: 7
+
+      # Upload Blazor UI artifacts
+      - name: Upload Blazor UI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-artifacts
+          path: ./publish/ui/
+          retention-days: 7

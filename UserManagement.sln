@@ -27,6 +27,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserManagement.Api", "UserM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserManagement.UI", "UserManagement.UI\UserManagement.UI.csproj", "{269F2547-FCDA-46B6-BB0A-C7CB91BDA4C2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{28351BA9-AEFF-40EE-A3C0-F290F78E69FA}"
+	ProjectSection(SolutionItems) = preProject
+		ci.yml = ci.yml
+		publish.yml = publish.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,6 +76,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{F15707C9-86D2-4D30-BD1B-672487F7D3AC} = {C9849C01-AD0F-437C-B6E8-5B627335F8EE}
 		{1EDAC0F0-A080-45D5-9D56-9B2070AA7404} = {C9849C01-AD0F-437C-B6E8-5B627335F8EE}
+		{28351BA9-AEFF-40EE-A3C0-F290F78E69FA} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {46E0200E-E65A-469F-9BC8-971E5875A972}
